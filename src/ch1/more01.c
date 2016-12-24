@@ -1,6 +1,6 @@
-/*more01.c - version 0.1 of more
-*          - read and print 24 lines then pause for a few special commands
-*/
+/* more01.c - version 0.1 of more
+ *           - read and print 24 lines then pause for a few special commands
+ */
 
 #include <stdio.h>
 
@@ -28,7 +28,7 @@ int main(int ac, char *av[])
 }
 
 /*
- *read PAGELEN lines, then call see_more() for further instructions
+ * read PAGELEN lines, then call see_more() for further instructions
  */
 void do_more(FILE *fp)
 {
@@ -69,7 +69,3 @@ int see_more(void)
     }
     return 0;
 }
-
-            
-
-

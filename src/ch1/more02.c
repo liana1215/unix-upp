@@ -74,8 +74,4 @@ int see_more(FILE *cmd)
             return 1;
     }
     return 0;
-}
-
-            
-
-
+}   
