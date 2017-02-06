@@ -15,42 +15,43 @@
 
 int main(int argc, char **argv)
 {
-    char* f_name = NULL;
+    char* f_name = UTMP_FILE;
     char date[100];
     int opt = 0; 
-    
-    while (optind < argc) {
-        if ((opt = getopt(argc, argv, "f:")) != -1) {
-            switch (opt) {
-                case 'f':
-                    f_name = optarg;
-                    break;
-                case '?':
-                    fprintf(stdout, "display usage");
-                    break;
-                default:    
-                    break;
-            }
-        } else {
-            assert(argc > 3);
 
-            strcpy(date, argv[optind++]);
-            strcat(date, " ");
-            strcat(date, argv[optind++]);
-            strcat(date, " ");
-            strcat(date, argv[optind++]);
-            printf("%s", date);
-            break;
+    while ((opt = getopt(argc, argv, "f:")) != -1) {
+        switch (opt) {
+            case 'f':
+                f_name = optarg;
+                break;
+            case '?':
+                fprintf(stdout, "display usage");
+                break;
+            default:    
+                fprintf(stdout,"def");
+                break;
         }
-    }
+    } 
+        
+    if (optind == argc) {optind = 1;} 
+
+    assert(argc > 3);
+    printf("%d", optind);            
+    strcpy(date, argv[optind++]);
+    strcat(date, " ");
+    strcat(date, argv[optind++]);
+    strcat(date, " ");
+    strcat(date, argv[optind++]);
+    printf("%s\n", date);
         
     char* arg_time = date;
+          
+    printf("%s\n", arg_time);
 
-    if (utmp_open(UTMP_FILE) == -1 ) {
-        fprintf(stderr,"%s: cannot open %s\n", *argv, UTMP_FILE);
+    if (utmp_open(f_name) == -1 ) {
+        fprintf(stderr,"%s: cannot open %s\n", *argv, f_name);
         exit(1);
     }
-    
     fetch_sequential(arg_time);
     utmp_close();
    
