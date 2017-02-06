@@ -28,7 +28,6 @@ int main(int argc, char **argv)
                 fprintf(stdout, "display usage");
                 break;
             default:    
-                fprintf(stdout,"def");
                 break;
         }
     } 
