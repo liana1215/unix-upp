@@ -35,17 +35,13 @@ int main(int argc, char **argv)
     if (optind == argc) {optind = 1;} 
 
     assert(argc > 3);
-    printf("%d", optind);            
     strcpy(date, argv[optind++]);
     strcat(date, " ");
     strcat(date, argv[optind++]);
     strcat(date, " ");
     strcat(date, argv[optind++]);
-    printf("%s\n", date);
         
     char* arg_time = date;
-          
-    printf("%s\n", arg_time);
 
     if (utmp_open(f_name) == -1 ) {
         fprintf(stderr,"%s: cannot open %s\n", *argv, f_name);
