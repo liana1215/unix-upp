@@ -4,6 +4,7 @@
 
 #include <utmp.h>
 
+off_t utmp_fsize(char *);
 int utmp_open(char *);
 struct utmp *utmp_next();
 int utmp_close();

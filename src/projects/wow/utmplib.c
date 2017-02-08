@@ -13,11 +13,12 @@
 #include        <stdio.h>
 #include        <fcntl.h>
 #include        <sys/types.h>
+#include        <sys/stat.h>
 #include        <utmp.h>
 #include	    <unistd.h>
 #include        <time.h>
 
-#define NRECS   16
+#define NRECS   100
 #define UTSIZE  (sizeof(struct utmp))
 
 #define TEXTDATE
@@ -37,15 +38,50 @@ static  int     fd_utmp = -1;                           /* read from    */
 static  int  utmp_reload();
 
 /*
+off_t 
+utmp_fsize(const char* filename)
+{
+    struct stat st = {0};
+    if (stat(filename, &st) != 0)
+        return -1;
+
+    return st.st_size;
+}
+
+int
+utmp_comp(const void *ut1, const void *ut2)
+{
+    //TODO: work on compare function, to fit to this particular problem.
+    struct utmp *key = (struct utmp*)ut1;
+    struct utmp *t2 = (struct utmp*)ut2;
+    struct tm *key_tm = {0};
+    struct tm *t2_tm = {0};
+
+    time_t *key_time = (time_t)key->ut_time;
+    time_t *t2_time = (time_t)t2->ut_time;
+    
+    key_tm = gmtime(&key_time);
+    t2_tm = gmtime(&t2_time);
+    
+    if (key_tm->tm_year == t2_tm->tm_year &&
+        key_tm->tm_mon == t2_tm->tm_mon &&
+        key_tm->tm_mday == t2_tm->tm_mday) {
+        return 0;
+     
+    
+    return (int)difftime(k, t2);
+}
+*/
+/*
  * utmp_open -- connect to specified file
  *  args: name of a utmp file
  *  rets: -1 if error, fd for file otherwise
  */
 int utmp_open( char *filename )
 {
-        fd_utmp = open( filename, O_RDONLY );           /* open it      */
-        cur_rec = num_recs = 0;                         /* no recs yet  */
-        return fd_utmp;                                 /* report       */
+    fd_utmp = open( filename, O_RDONLY );           /* open it      */
+    cur_rec = num_recs = 0;                         /* no recs yet  */
+    return fd_utmp;                                 /* report       */
 }
 
 /*
@@ -56,16 +92,16 @@ int utmp_open( char *filename )
  */
 struct utmp *utmp_next()
 {
-        struct utmp *recp;
+    struct utmp *recp;
 
-        if ( fd_utmp == -1 )                            /* error ?      */
-                return NULL;
-        if ( cur_rec==num_recs && utmp_reload() <= 0 )  /* any more ?   */
-                return NULL;
+    if ( fd_utmp == -1 )                            /* error ?      */
+            return NULL;
+    if ( cur_rec==num_recs && utmp_reload() <= 0 )  /* any more ?   */
+            return NULL;
 
-	recp = &(utmpbuf[cur_rec]);	/* get address of next record   */
-        cur_rec++;
-        return recp;
+    recp = &(utmpbuf[cur_rec]);	/* get address of next record   */
+    cur_rec++;
+    return recp;
 }
 
 static int utmp_reload()
@@ -74,16 +110,19 @@ static int utmp_reload()
  *      rets: 0=>EOF, -1=>error, else number of records read
  */
 {
-        int     amt_read;
-                                                
-	amt_read = read(fd_utmp, utmpbuf, NRECS*UTSIZE);   /* read data	*/
-	if ( amt_read < 0 )			/* mark errors as EOF   */
-		return -1;
-                                                
-        num_recs = amt_read/UTSIZE;		/* how many did we get?	*/
-        cur_rec  = 0;				/* reset pointer	*/
-        return num_recs;			/* report results	*/
+    int     amt_read;
+                                            
+    amt_read = read(fd_utmp, utmpbuf, NRECS*UTSIZE);   /* read data	*/
+    if ( amt_read < 0 )			/* mark errors as EOF   */
+        return -1;
+                                            
+    num_recs = amt_read/UTSIZE;		/* how many did we get?	*/
+    cur_rec  = 0;				    /* reset pointer	*/
+    return num_recs;			    /* report results	*/
 }
+
+           
+    
 
 /*
  * utmp_close -- disconnenect
@@ -92,7 +131,7 @@ static int utmp_reload()
  */
 int utmp_close()
 {
-	int rv = 0;
+  	int rv = 0;
         if ( fd_utmp != -1 ){                   /* don't close if not   */
                 rv = close( fd_utmp );          /* open                 */
 		fd_utmp = -1;			                /* record as closed	*/
