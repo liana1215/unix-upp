@@ -3,6 +3,7 @@
 #include "utmp.h"
 #include "utmplib.h"
 
+
 void 
 fetch_sequential(int year, int month, int day) 
 {
@@ -10,27 +11,23 @@ fetch_sequential(int year, int month, int day)
     
     while ((utbufp = utmp_next()) != ((struct utmp *) NULL)) {
         time_t* log_time = (time_t)utbufp->ut_time;
-        struct tm *log = {0};
+        struct tm tm_lb, tm_ub = {0};
 
-        log = gmtime(&log_time);
-        if (log->tm_year == year && 
-            log->tm_mon == month &&
-            log->tm_mday == day) {
+        //populate lower bound
+        tm_lb.tm_year = year;
+        tm_lb.tm_mon = month;
+        tm_lb.tm_mday = day;
+
+        //populate upper bound    
+        tm_ub.tm_year = year;
+        tm_ub.tm_mon = month;
+        tm_ub.tm_mday = day + 1;
+
+        time_t tgt_lb = mktime(&tm_lb);
+        time_t tgt_ub = mktime(&tm_ub);
+
+        if (log_time >= tgt_lb && log_time <= tgt_ub) {
             show_info(utbufp);
         }        
     }
 }  
-
-/*
-void
-fetch_bsearch(int year, int month, int day, int fsize)
-{
-    struct tm key, *res;
-    key.tm_year = year;
-    key.tm_mon = month;
-    key.tm_day = day;
-    
-    int tot_rec = fsize/UTSIZE;
-    res = bsearch(&key, tot_rec, UTSIZE, utmp_comp)
-} 
-*/  
