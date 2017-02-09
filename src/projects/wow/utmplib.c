@@ -18,7 +18,7 @@
 #include	    <unistd.h>
 #include        <time.h>
 
-#define NRECS   100
+#define NRECS   1
 #define UTSIZE  (sizeof(struct utmp))
 
 #define TEXTDATE
@@ -30,14 +30,13 @@
 #endif
 #endif
 
-static	struct utmp utmpbuf[NRECS];			/* storage	*/
+static struct utmp utmpbuf[NRECS];			/* storage	*/
 static  int     num_recs;                               /* num stored   */
 static  int     cur_rec;                                /* next to go   */
 static  int     fd_utmp = -1;                           /* read from    */
-
 static  int  utmp_reload();
 
-/*
+
 off_t 
 utmp_fsize(const char* filename)
 {
@@ -48,30 +47,6 @@ utmp_fsize(const char* filename)
     return st.st_size;
 }
 
-int
-utmp_comp(const void *ut1, const void *ut2)
-{
-    //TODO: work on compare function, to fit to this particular problem.
-    struct utmp *key = (struct utmp*)ut1;
-    struct utmp *t2 = (struct utmp*)ut2;
-    struct tm *key_tm = {0};
-    struct tm *t2_tm = {0};
-
-    time_t *key_time = (time_t)key->ut_time;
-    time_t *t2_time = (time_t)t2->ut_time;
-    
-    key_tm = gmtime(&key_time);
-    t2_tm = gmtime(&t2_time);
-    
-    if (key_tm->tm_year == t2_tm->tm_year &&
-        key_tm->tm_mon == t2_tm->tm_mon &&
-        key_tm->tm_mday == t2_tm->tm_mday) {
-        return 0;
-     
-    
-    return (int)difftime(k, t2);
-}
-*/
 /*
  * utmp_open -- connect to specified file
  *  args: name of a utmp file
@@ -83,6 +58,15 @@ int utmp_open( char *filename )
     cur_rec = num_recs = 0;                         /* no recs yet  */
     return fd_utmp;                                 /* report       */
 }
+
+
+int utmp_fread(FILE *fp)
+{
+    int amt_read = 0;
+    amt_read = fread(utmpbuf, UTSIZE, UTSIZE, fp);          
+    return (amt_read < UTSIZE)?0:1;
+}
+
 
 /*
  * utmp_next -- return address of next record in file
@@ -120,9 +104,6 @@ static int utmp_reload()
     cur_rec  = 0;				    /* reset pointer	*/
     return num_recs;			    /* report results	*/
 }
-
-           
-    
 
 /*
  * utmp_close -- disconnenect

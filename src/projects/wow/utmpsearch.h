@@ -4,6 +4,6 @@
 #include "utmp.h"
 
 void fetch_sequential(int, int, int);
-//off_t fetch_bsearch(int, int, int, int);
+void fetch_bsearch(int, int, int, int, FILE*);
 
 #endif
