@@ -31,3 +31,34 @@ fetch_sequential(int year, int month, int day)
         }        
     }
 }  
+
+
+void
+fetch_bsearch(int year, int month, int day, int fsize)
+{
+    int tot_rec = fsize/UTSIZE;
+    struct utmp *utbufp = {0};
+     
+    time_t* log_time = (time_t)utbufp->ut_time; 
+
+
+    struct tm key;
+    key.tm_year = year;
+    key.tm_mon = month;
+    key.tm_mday = day;
+    
+    time_t key = mktime(&key);
+
+    int l = 0;
+    int r = tot_rec - 1;
+
+        
+    //1. set L to first record, set R to last record (n-1)
+    //2. if L > R terminate
+    //3. set m, middle, to floor of L+R/2
+    //4. if A_m < T, set L = m+1, and go to step 2    
+    //5. if A_m > T, set R to m-1, go to step 2
+    //now A_m == T and search is done. 
+}
+
+        
