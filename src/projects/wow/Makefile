@@ -2,10 +2,10 @@ CC     = cc
 CFLAGS = -Wall -Wextra -g 
 
 
-bwow: wow.o utmplib.o utmpsearch.o
+wow: wow.o utmplib.o utmpsearch.o
 	$(CC) $(CFLAGS) -o wow wow.o utmplib.o utmpsearch.o -lm
 
-bwow.o: wow.c
+wow.o: wow.c
 	$(CC) $(CFLAGS) -c wow.c
 
 utmplib.o: utmplib.c
