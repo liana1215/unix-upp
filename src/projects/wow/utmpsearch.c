@@ -1,3 +1,5 @@
+
+#define __USE_XOPEN  
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -12,7 +14,7 @@ fetch_sequential(int year, int month, int day)
     struct utmp *utbufp = {0};
     
     while ((utbufp = utmp_next()) != ((struct utmp *) NULL)) {
-        time_t* log_time = (time_t)utbufp->ut_time;
+        time_t log_time = (time_t)utbufp->ut_time;
         struct tm tm_lb = {0};
         struct tm tm_ub = {0};
 
@@ -63,18 +65,14 @@ utmp_bsearch(FILE *fp, int l, int r, time_t key) {
     
     if (temp.ut_time < key)
         return utmp_bsearch(fp, m+1, r, key);
-    
 }
      
 void
 fetch_bsearch(int year, int month, int day, int fsize, FILE* fp)
 {
-    struct utmp *utbufp = {0};
-    struct utmp temp;
-
+    struct utmp temp = {0};
     int l_idx = 0;
     int r_idx = 0;
-    int m_idx = 0;
     int tot_rec = fsize/(sizeof(struct utmp));     
 
     //set key as the target date.
@@ -110,8 +108,5 @@ fetch_bsearch(int year, int month, int day, int fsize, FILE* fp)
 
             printf("\n");   
         }            
-          
-
     }
 }
-        

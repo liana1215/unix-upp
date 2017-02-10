@@ -10,31 +10,21 @@
  *      reads NRECS per read and then doles them out from the buffer
  *      hist: 2012-02-14 slightly modified error handling (thanks mk)
  */
-#include        <stdio.h>
-#include        <fcntl.h>
-#include        <sys/types.h>
-#include        <sys/stat.h>
-#include        <utmp.h>
-#include	    <unistd.h>
-#include        <time.h>
-#include        "utmplib.h"
-
-
-#define TEXTDATE
-#ifndef DATE_FMT
-#ifdef  TEXTDATE
-#define DATE_FMT    "%b %e %H:%M"       /* text format  */
-#else
-#define DATE_FMT    "%Y-%m-%d %H:%M"    /* the default  */
-#endif
-#endif
+#define     _XOPEN_SOURCE
+#include    <stdio.h>
+#include    <fcntl.h>
+#include    <sys/types.h>
+#include    <sys/stat.h>
+#include    <utmp.h>
+#include	<unistd.h>
+#include    <time.h>
+#include    "utmplib.h"
 
 
 static  int     num_recs;                               /* num stored   */
 static  int     cur_rec;                                /* next to go   */
 static  int     fd_utmp = -1;                           /* read from    */
 static  int  utmp_reload();
-
 
 off_t 
 utmp_fsize(const char* filename)
