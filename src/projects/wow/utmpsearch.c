@@ -41,7 +41,8 @@ fetch_sequential(int year, int month, int day)
 
 
 int
-utmp_bsearch(FILE *fp, int l, int r, time_t key) {
+utmp_bsearch(FILE *fp, int l, int r, time_t key) 
+{
     int m = 0;
     struct utmp temp, ml, mu;
  
@@ -69,6 +70,7 @@ utmp_bsearch(FILE *fp, int l, int r, time_t key) {
         return utmp_bsearch(fp, m+1, r, key);
 }
      
+
 void
 fetch_bsearch(int year, int month, int day, int fsize, FILE* fp)
 {
