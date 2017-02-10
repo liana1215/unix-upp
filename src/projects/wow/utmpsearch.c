@@ -17,6 +17,8 @@ fetch_sequential(int year, int month, int day)
         time_t log_time = (time_t)utbufp->ut_time;
         struct tm tm_lb = {0};
         struct tm tm_ub = {0};
+        tm_lb.tm_isdst = -1; 
+        tm_ub.tm_isdst = -1;
 
         //populate lower bound
         tm_lb.tm_year = year;
@@ -77,6 +79,7 @@ fetch_bsearch(int year, int month, int day, int fsize, FILE* fp)
 
     //set key as the target date.
     struct tm tm_key = {0};
+    tm_key.tm_isdst = -1;
     tm_key.tm_year = year;
     tm_key.tm_mon = month;
     tm_key.tm_mday = day;    
@@ -96,6 +99,9 @@ fetch_bsearch(int year, int month, int day, int fsize, FILE* fp)
         while (1) {
             fseek(fp, (long)((found+(i++))*UTSIZE), SEEK_SET);
             fread(&temp, UTSIZE, 1, fp);
+            
+            if (temp.ut_type != USER_PROCESS) 
+                continue;
 
             if (temp.ut_time > key_stop)
                 break;
