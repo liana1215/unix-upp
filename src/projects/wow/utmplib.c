@@ -17,9 +17,8 @@
 #include        <utmp.h>
 #include	    <unistd.h>
 #include        <time.h>
+#include        "utmplib.h"
 
-#define NRECS   1
-#define UTSIZE  (sizeof(struct utmp))
 
 #define TEXTDATE
 #ifndef DATE_FMT
@@ -30,7 +29,7 @@
 #endif
 #endif
 
-static struct utmp utmpbuf[NRECS];			/* storage	*/
+
 static  int     num_recs;                               /* num stored   */
 static  int     cur_rec;                                /* next to go   */
 static  int     fd_utmp = -1;                           /* read from    */
@@ -64,9 +63,19 @@ int utmp_fread(FILE *fp)
 {
     int amt_read = 0;
     amt_read = fread(utmpbuf, UTSIZE, UTSIZE, fp);          
-    return (amt_read < UTSIZE)?0:1;
+    return (amt_read < (int)UTSIZE)?0:1;
 }
 
+struct utmp *utmp_get(int idx)
+{
+    struct utmp *recp;
+    if (fd_utmp == -1)
+        return NULL;
+    
+    recp = &(utmpbuf[idx]);
+    return recp;
+}
+  
 
 /*
  * utmp_next -- return address of next record in file

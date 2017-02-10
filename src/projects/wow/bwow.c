@@ -46,13 +46,16 @@ int main(int argc, char **argv)
     
     FILE *fp;
     
-    if ((fp = fopen(f_name, "r") == NULL)) {
+    fp = fopen(f_name, "r");
+    if (fp == NULL) {
         fprintf(stderr,"%s: cannot open %s\n", *argv, f_name);
         exit(1);
     } 
     
+    printf("OK\n");
     int fsize = utmp_fsize(f_name);
-        
+    printf("size OK\n");
+    
     fetch_bsearch(year, month, day, fsize, fp);
     utmp_close();
    

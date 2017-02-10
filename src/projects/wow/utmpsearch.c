@@ -6,8 +6,6 @@
 #include "utmplib.h"
 
 
-static struct utmp butmpbuf[1];
-
 void 
 fetch_sequential(int year, int month, int day) 
 {
@@ -38,96 +36,82 @@ fetch_sequential(int year, int month, int day)
 }  
 
 
-void 
-deep_copy_utmp(struct utmp* utmp1, struct utmp* utmp2) {
-    utmp1->ut_time = utmp2->ut_time;
-}     
+int
+utmp_bsearch(FILE *fp, int l, int r, time_t key) {
+    int m = 0;
+    struct utmp temp, ml, mu;
+ 
+    if (l > r)  
+        return -1;
+    
+    m = (int)floor((double)((l+r)/2));
 
+    fseek(fp, (long)m*UTSIZE, SEEK_SET);
+    fread(&temp, UTSIZE, 1, fp);
 
+    //get m - 1 and m + 1 for equivalence check
+    fseek(fp, (long)(m+1)*UTSIZE, SEEK_SET);
+    fread(&mu, UTSIZE, 1, fp);
+    fseek(fp, (long)(m-1)*UTSIZE, SEEK_SET);
+    fread(&ml, UTSIZE, 1, fp);
+
+    if (ml.ut_time < key && mu.ut_time > key) 
+        return m;
+
+    if (temp.ut_time > key) 
+        return utmp_bsearch(fp, l, m-1, key);
+    
+    if (temp.ut_time < key)
+        return utmp_bsearch(fp, m+1, r, key);
+    
+}
+     
 void
-fetch_bsearch(int year, int month, int day, int fsize, FILE *fp)
+fetch_bsearch(int year, int month, int day, int fsize, FILE* fp)
 {
-    FILE *l = NULL;
-    FILE *r = NULL;
-    FILE *m = NULL;
-    struct utmp *lutmp ={0};
-    struct utmp *rutmp ={0};
-    struct utmp *mutmp ={0};
+    struct utmp *utbufp = {0};
+    struct utmp temp;
+
     int l_idx = 0;
     int r_idx = 0;
     int m_idx = 0;
     int tot_rec = fsize/(sizeof(struct utmp));     
 
     //set key as the target date.
-    struct tm tm_key;
+    struct tm tm_key = {0};
     tm_key.tm_year = year;
     tm_key.tm_mon = month;
     tm_key.tm_mday = day;    
     time_t key = mktime(&tm_key);
 
-
     l_idx = 0;
-    r_idx = tot_rec;
+    r_idx = tot_rec - 1;
 
-    while(1) {
-
-        l = fp + l_idx*(sizeof(struct utmp));
-        r = fp + r_idx*(sizeof(struct utmp));
-         
-        if (utmp_fread(l) == 0) {
-            if (feof(l) )
-                fprintf(stdout, "End of File");
-            if (ferror(l)) {
-                fprintf(stderr, "Error in bsearch");
-                exit(1);
-            }
-        } else {
-            deep_copy_utmp(lutmp, butmpbuf);
-        }
+    int found = utmp_bsearch(fp, l_idx, r_idx, key);
+    if (found == -1) {
+        return;
+    } else {
+        int i = 1;
+        tm_key.tm_mday = day + 1;
+        time_t key_stop = mktime(&tm_key);
         
-        if (utmp_fread(r) == 0) {
-            if (feof(r))
-                fprintf(stdout, "End of File");
-            if (ferror(r)) {
-                fprintf(stderr, "Error in bsearch");
-                exit(1);
-            }
-        } else {
-            deep_copy_utmp(rutmp, butmpbuf);
-        }
-        
-        if (lutmp->ut_time > rutmp->ut_time) {
-            printf("DONE");
-            break;
-        }
-        
-        m_idx = (int)floor((double)((l_idx + r_idx)/2));
-        m = fp + m_idx*(sizeof(struct utmp));
+        while (1) {
+            fseek(fp, (long)((found+(i++))*UTSIZE), SEEK_SET);
+            fread(&temp, UTSIZE, 1, fp);
 
-        if (utmp_fread(m) == 0) {
-            if (feof(m))
-                fprintf(stdout, "End of File");
-            if (ferror(m)) {
-                fprintf(stderr, "Error in bsearch");
-                exit(1);
-            }
-        } else {
-            deep_copy_utmp(mutmp,butmpbuf);
-        }
+            if (temp.ut_time > key_stop)
+                break;
 
-        if (mutmp->ut_time < key) {
-            l_idx = m_idx + 1;
-        } 
-        if (mutmp->ut_time > key) {
-            r_idx = m_idx - 1;
-        }
+            printf("%-8s\t", temp.ut_name);        /* the logname  */
+            printf("%-12.12s\t", temp.ut_line);    /* the tty  */
+            show_time(temp.ut_time, DATE_FMT);     /* display time */
+            if (temp.ut_host[0] != '\0')
+                printf(" (%s)", temp.ut_host);     /* the host */
+
+            printf("\n");   
+        }            
+          
+
     }
-    //1. set L to first record, set R to last record (n-1)
-    //2. if L > R terminate
-    //3. set m, middle, to floor of L+R/2
-    //4. if A_m < T, set L = m+1, and go to step 2    
-    //5. if A_m > T, set R to m-1, go to step 2
-    //now A_m == T and search is done. 
 }
-
         
