@@ -4,7 +4,7 @@
 
 #include <utmp.h>
 
-#define NRECS 10
+#define NRECS 10000
 #define UTSIZE (sizeof(struct utmp))
 
 #define TEXTDATE
