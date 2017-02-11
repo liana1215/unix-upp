@@ -1,15 +1,3 @@
-/* utmplib.c  - functions to buffer reads from utmp file 
- *
- *      functions are
- *              int utmp_open( filename )   - open file
- *                      returns -1 on error
- *              struct utmp *utmp_next( )   - return pointer to next struct
- *                      returns NULL on eof or read error
- *              int utmp_close()            - close file
- *
- *      reads NRECS per read and then doles them out from the buffer
- *      hist: 2012-02-14 slightly modified error handling (thanks mk)
- */
 #define     _XOPEN_SOURCE
 #include    <stdio.h>
 #include    <fcntl.h>
@@ -21,13 +9,18 @@
 #include    "utmplib.h"
 
 
-static  int     num_recs;                               /* num stored   */
-static  int     cur_rec;                                /* next to go   */
-static  int     fd_utmp = -1;                           /* read from    */
-static  int  utmp_reload();
+static  int num_recs;                               /* num stored   */
+static  int cur_rec;                                /* next to go   */
+static  int fd_utmp = -1;                           /* read from    */
+static  int utmp_reload();
 
-off_t 
-utmp_fsize(const char* filename)
+
+/*
+ * utmp_fize - Returns the size of the file.
+ *  args: filename
+ *  rets: size of file, represented by type off_t
+ */
+off_t utmp_fsize(const char* filename)
 {
     struct stat st = {0};
     if (stat(filename, &st) != 0)
@@ -36,10 +29,11 @@ utmp_fsize(const char* filename)
     return st.st_size;
 }
 
+
 /*
- * utmp_open -- connect to specified file
- *  args: name of a utmp file
- *  rets: -1 if error, fd for file otherwise
+ * utmp_open -- Connects to specified file.
+ *  args: filename
+ *  rets: -1 if error occured, or the file descriptor
  */
 int utmp_open( char *filename )
 {
@@ -49,29 +43,11 @@ int utmp_open( char *filename )
 }
 
 
-int utmp_fread(FILE *fp)
-{
-    int amt_read = 0;
-    amt_read = fread(utmpbuf, UTSIZE, UTSIZE, fp);          
-    return (amt_read < (int)UTSIZE)?0:1;
-}
-
-struct utmp *utmp_get(int idx)
-{
-    struct utmp *recp;
-    if (fd_utmp == -1)
-        return NULL;
-    
-    recp = &(utmpbuf[idx]);
-    return recp;
-}
-  
-
 /*
- * utmp_next -- return address of next record in file
+ * utmp_next - Returns address of next record in file.
  *  args: none
  *  rets: address of record in buffer
- *  note: this location will be reused on next buffer reload
+ *  note: This location will be reused on next buffer reload.
  */
 struct utmp *utmp_next()
 {
@@ -88,9 +64,9 @@ struct utmp *utmp_next()
 }
 
 static int utmp_reload()
-/*
- *      read next bunch of records into buffer
- *      rets: 0=>EOF, -1=>error, else number of records read
+/* 
+ * read next bunch of records into buffer
+ * rets: 0=>EOF, -1=>error, else number of records read
  */
 {
     int     amt_read;
@@ -105,7 +81,7 @@ static int utmp_reload()
 }
 
 /*
- * utmp_close -- disconnenect
+ * utmp_close - disconnenect
  *  args: none
  *  rets: ret value from close(2)  -- see man 2 close
  */
@@ -120,14 +96,13 @@ int utmp_close()
 }
 
 /*
- *  show info()
- *          displays the contents of the utmp struct
- *          in human readable form
- *          * displays nothing if record has no user name
+ * show_info - outputs log informatoin 
+ *  args: utbufp
+ * 
+ * A specified subset of log information found in the utmp struct in human
+ * readable form.
  */
-
-void
-show_info(struct utmp *utbufp)
+void show_info(struct utmp *utbufp)
 {
     if (utbufp->ut_type != USER_PROCESS)
         return;
@@ -142,14 +117,14 @@ show_info(struct utmp *utbufp)
 }
 
 #define MAXDATELEN  100
-
-void
-show_time( time_t timeval , char *fmt )
-/*
- * displays time in a format fit for human consumption.
+/* 
+ * show_time - displays time in a format fit for human consumption.
+ *  args: timeval, *fmt
+ *  
  * Uses localtime to convert the timeval into a struct of elements
  * (see localtime(3)) and uses strftime to format the data
  */
+void show_time( time_t timeval , char *fmt )
 {
     char    result[MAXDATELEN];
 
@@ -158,11 +133,15 @@ show_time( time_t timeval , char *fmt )
     fputs(result, stdout);
 }
 
-
-time_t
-convert_time(char* date)
+/*
+ * convert_time - converts from string to type time_t
+ *  args: *date
+ *  rets: time in unix time of type time_t
+ */
+time_t convert_time(char* date)
 {
-    struct tm tp;
+    struct tm tp = {0};
+    tp.tm_isdst = -1;
 
     strptime(date, "%Y %m %d", &tp);
     return mktime(&tp);
