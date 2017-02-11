@@ -78,6 +78,8 @@ int utmp_bsearch(FILE *fp, int l, int r, time_t key)
     
     if (temp.ut_time < key)
         return utmp_bsearch(fp, m+1, r, key);
+
+    return 0;   /* Should never get here*/
 }
  
 
