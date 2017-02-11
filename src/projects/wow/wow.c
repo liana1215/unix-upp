@@ -10,10 +10,9 @@
 #include    "utmpsearch.h"
 
 /*
- *  bwow version 1.0     - read /etc/utmp and lists logins for specified date
- *                       - uses binary search 
+ *  wow version 1.0      - lists logins for specified date
+ *                       - user can specify sequential or binary search 
  */
-
 #define USAGE "usage: [-f] input_file year month day [-s|-b]\n"
 
 int main(int argc, char **argv)
@@ -23,7 +22,7 @@ int main(int argc, char **argv)
     int year = 0;
     int month = 0;
     int day = 0;
-    int seq_bin = 0;
+    int seq_bin = 1;
 
     while ((opt = getopt(argc, argv, "f:sb")) != -1) {
         switch (opt) {
