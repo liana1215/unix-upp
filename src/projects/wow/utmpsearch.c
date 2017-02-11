@@ -23,12 +23,12 @@ void fetch_sequential(int year, int month, int day)
         tm_lb.tm_isdst = -1; 
         tm_ub.tm_isdst = -1;
 
-        //populate lower bound
+        /*populate lower bound*/
         tm_lb.tm_year = year;
         tm_lb.tm_mon = month;
         tm_lb.tm_mday = day;
 
-        //populate upper bound    
+        /*populate upper bound*/  
         tm_ub.tm_year = year;
         tm_ub.tm_mon = month;
         tm_ub.tm_mday = day + 1;
