@@ -75,7 +75,7 @@ void fetch_bsearch(int year, int month, int day, int fsize)
         time_t key_stop = mktime(&tm_key);
         while ((temp = utmp_next()) != ((struct utmp *) NULL)) {
             time_t log_time = (time_t)temp->ut_time;
-     
+
             if (log_time > key_stop) break;
    
             show_info(temp);

@@ -6,8 +6,8 @@
 #include    <stdlib.h>
 #include    <assert.h>
 
-#include    "utmplib.h" 
-#include    "utmpsearch.h"
+#include    "wtmplib.h" 
+#include    "wtmpsearch.h"
 
 /*
  *  wow version 1.0      - lists logins for specified date
@@ -52,16 +52,14 @@ int main(int argc, char **argv)
     day = atoi(argv[optind++]);     
 
     if (!seq_bin) {
-        FILE *fp;
-        
-        fp = fopen(f_name, "r");
-        if (fp == NULL) {
+        if (utmp_open(f_name) == -1 ) {
             fprintf(stderr,"%s: cannot open %s\n", *argv, f_name);
             exit(1);
-        } 
-        
+        }
+
         int fsize = utmp_fsize(f_name);
-        fetch_bsearch(year, month, day, fsize, fp);
+        fetch_bsearch(year, month, day, fsize);
+
     } else {
         if (utmp_open(f_name) == -1 ) {
             fprintf(stderr,"%s: cannot open %s\n", *argv, f_name);
