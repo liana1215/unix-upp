@@ -6,7 +6,7 @@
 #include    <utmp.h>
 #include    <unistd.h>
 #include    <time.h>
-#include    "utmplib.h"
+#include    "wtmplib.h"
 
 
 static  int num_recs;                               /* num stored   */
@@ -42,7 +42,50 @@ int utmp_open( char *filename )
     return fd_utmp;                                 /* report       */
 }
 
+struct utmp *utmp_bsearch(int l, int r, time_t key)
+{
+    struct utmp *recp;
 
+    int m = 0;
+    int amt_read = 0;
+    struct utmp temp = {0};
+    struct utmp ml = {0};
+    struct utmp mu = {0};
+    
+    if (l > r) 
+        return NULL;
+
+    m = (int)floor((double)(l+r)/2);
+
+    //can we read temp, mu, ml into buffer one shot? can reduce the syscalls?
+    off_t loc = lseek(fd_utmp, (off_t)m*UTSIZE, SEEK_SET);
+    amt_read = read(fd_utmp, &temp, UTSIZE);        
+    
+    lseek(fd_utmp, (off_t)(m+1)*UTSIZE, SEEK_SET);
+    amt_read = read(fd_utmp, &mu, UTSIZE);
+    
+    lseek(fd_utmp, (off_t)(m-1)*UTSIZE, SEEK_SET);
+    amt_read = read(fd_utmp, &ml, UTSIZE);
+
+    
+    if (ml.ut_time < key && mu.ut_time > key) {
+        lseek(fd_utmp, loc, SEEK_SET);
+        amt_read = read(fd_utmp, utmpbuf, NRECS*UTSIZE);
+
+        num_recs = amt_read/UTSIZE;
+        cur_rec = 0;
+        recp = &(utmpbuf[cur_rec]);
+        return recp;
+    }
+
+    if (temp.ut_time > key)
+        return utmp_bsearch(l, m-1, key);
+
+    if (temp.ut_time < key)
+        return utmp_bsearch(m+1, r, key);
+
+}
+    
 /*
  * utmp_next - Returns address of next record in file.
  *  args: none

@@ -20,6 +20,7 @@ struct utmp utmpbuf[NRECS];
 
 off_t utmp_fsize(const char *);
 int utmp_open(char *);
+struct utmp *utmp_bsearch(int, int, time_t);
 struct utmp *utmp_next();
 int utmp_close();
 void show_info(struct utmp *);

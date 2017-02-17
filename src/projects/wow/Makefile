@@ -2,17 +2,17 @@ CC     = gcc
 CFLAGS = -Wall -Wextra -g 
 
 
-wow: wow.o utmplib.o utmpsearch.o
-	$(CC) $(CFLAGS) -o wow wow.o utmplib.o utmpsearch.o -lm
+wow: wow.o wtmplib.o wtmpsearch.o
+	$(CC) $(CFLAGS) -o wow wow.o wtmplib.o wtmpsearch.o -lm
 
 wow.o: wow.c
 	$(CC) $(CFLAGS) -c wow.c
 
-utmplib.o: utmplib.c
-	$(CC) $(CFLAGS) -c utmplib.c
+utmplib.o: wtmplib.c
+	$(CC) $(CFLAGS) -c wtmplib.c
 
-utmpsearch.o: utmpsearch.c
-	$(CC) $(CFLAGS) -c utmpsearch.c
+utmpsearch.o: wtmpsearch.c
+	$(CC) $(CFLAGS) -c wtmpsearch.c
 
 clean:
-	rm -f utmplib.o utmpsearch.o wow wow.o 
+	rm -f wtmplib.o wtmpsearch.o wow wow.o 
