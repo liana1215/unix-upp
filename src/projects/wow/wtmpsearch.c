@@ -15,27 +15,29 @@
 void fetch_sequential(int year, int month, int day) 
 {
     struct utmp *utbufp = {0};
-    
+    struct tm tm_lb = {0};
+    struct tm tm_ub = {0};
+    tm_lb.tm_isdst = -1; 
+    tm_ub.tm_isdst = -1;
+
+    /*populate lower bound*/
+    tm_lb.tm_year = year;
+    tm_lb.tm_mon = month;
+    tm_lb.tm_mday = day;
+
+    /*populate upper bound*/  
+    tm_ub.tm_year = year;
+    tm_ub.tm_mon = month;
+    tm_ub.tm_mday = day + 1;
+
+    time_t tgt_lb = mktime(&tm_lb);
+    time_t tgt_ub = mktime(&tm_ub);
+
     while ((utbufp = utmp_next()) != ((struct utmp *) NULL)) {
         time_t log_time = (time_t)utbufp->ut_time;
-        struct tm tm_lb = {0};
-        struct tm tm_ub = {0};
-        tm_lb.tm_isdst = -1; 
-        tm_ub.tm_isdst = -1;
+        if (log_time >= tgt_ub) break;
 
-        /*populate lower bound*/
-        tm_lb.tm_year = year;
-        tm_lb.tm_mon = month;
-        tm_lb.tm_mday = day;
-
-        /*populate upper bound*/  
-        tm_ub.tm_year = year;
-        tm_ub.tm_mon = month;
-        tm_ub.tm_mday = day + 1;
-
-        time_t tgt_lb = mktime(&tm_lb);
-        time_t tgt_ub = mktime(&tm_ub);
-        if (log_time >= tgt_lb && log_time <= tgt_ub) {
+        if (log_time >= tgt_lb && log_time < tgt_ub) {
             show_info(utbufp);
         }        
     }
