@@ -17,7 +17,8 @@
 #define USAGE "usage: [-f] input_file year month day [-s|-b]\n"
 
 
-long int get_arg(char **argv) {
+long int get_arg(char **argv) 
+{
     char *endptr = NULL;
     char *str = NULL;
     long int ret = 0;
