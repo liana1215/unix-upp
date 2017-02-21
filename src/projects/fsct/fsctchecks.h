@@ -8,8 +8,8 @@ struct check {
     int case_clash;
 };
    
-struct check* checks;
-struct check* make_checks(char*);
+struct check* make_checks(char*, char*);
+int check_badchar(char, char*);
 
 #endif
  

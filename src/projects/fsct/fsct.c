@@ -49,12 +49,15 @@ int main(int argc, char** argv)
         }
     }
     
+    struct check* chks = {0};
+    chks = make_checks(file, badchars);
+
     //TODO: call dfs, create linked list for tack
-    printf("fname: %s\n", file);
-    printf("max depth: %d\n", max_depth);
-    printf("path max: %d\n", max_chars);
-    printf("badchars: %s\n", badchars);
-    printf("nocasesens: %d\n", nocases);
+    printf("depth: %d\n", chks->depth);
+    //printf("max depth: %d\n", max_depth);
+    //printf("path max: %d\n", max_chars);
+    //printf("badchars: %s\n", badchars);
+    //printf("nocasesens: %d\n", nocases);
     
     return 0;
 }
