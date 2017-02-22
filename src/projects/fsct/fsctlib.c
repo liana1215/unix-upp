@@ -61,16 +61,18 @@ void fsct_dfs(char* filename, int maxdepth, int maxchars, char* badchars)
             if ((maxdepth < 0? 0:checks->depth > maxdepth) 
                 || (maxchars < 0? 0:checks->num_char > maxchars) 
                 || (badchars < 0? 0:checks->bad_char == 1)) { //include case sens check
-                //get pwd
-                //concat with direntp->d_name
-                //print string
                 char *cwdbuf;
                 cwdbuf = malloc(sizeof(char)*100);
 
                 char *pathp;
                 pathp = getcwd(cwdbuf, sizeof(char)*100);
-                printf("BAD filename: %s\n ", direntp->d_name);
-                printf("cwd: %s\n ", pathp);
+
+                size_t pathlen = strlen(pathp);
+                size_t flen = strlen(direntp->d_name);
+                int arr_size = (pathlen + flen);
+                char rets[arr_size+1];
+                strconcat(pathp, direntp->d_name, rets, arr_size);               
+
                 free(cwdbuf);
             }
         } else {
@@ -83,6 +85,19 @@ void fsct_dfs(char* filename, int maxdepth, int maxchars, char* badchars)
     closedir(dirp);
 }
 
+void strconcat(char* path, char* fname, char* rets, int arr_size) 
+{
+    int i = 0;
+
+    for (i = 0; i < arr_size; i++) 
+        rets[i] = path[i];
+    rets[arr_size] = '\0';
+
+    strcat(rets, fname);
+}
+
+
+ 
     //check each file/dir in parent dir.
         //for each file, call check()
             //if dir and check() is ok then add dir to stack(data structure)
