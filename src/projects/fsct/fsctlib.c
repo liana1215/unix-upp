@@ -5,8 +5,11 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <string.h>
 #include "fsctlib.h"
 #include "fsctchecks.h"
+#include "fsctstack.h"
+
 
 int isadir(char* name)
 {
@@ -49,61 +52,61 @@ void fsct_dfs(char* filename, int maxdepth, int maxchars, char* badchars)
         struct check* checks;
          
         checks = make_checks(direntp->d_name, badchars);
-        printf("NEWFILE\n");
+        /*printf("NEWFILE\n");
         printf("depth: %d\n", checks->depth > maxdepth);
         printf("mchar: %d max: %d\n", checks->num_char, maxchars);
         printf("badchar: %d\n", checks->bad_char);
-
+        */
         lstat(direntp->d_name, &info);
 
         
-        if (S_ISREG(info.st_mode)) {
-            if ((maxdepth < 0? 0:checks->depth > maxdepth) 
-                || (maxchars < 0? 0:checks->num_char > maxchars) 
-                || (badchars < 0? 0:checks->bad_char == 1)) { //include case sens check
-                char *cwdbuf;
-                cwdbuf = malloc(sizeof(char)*100);
+        if ((maxdepth < 0? 0:checks->depth > maxdepth) 
+            || (maxchars < 0? 0:checks->num_char > maxchars) 
+            || (badchars < 0? 0:checks->bad_char == 1)) { //include case sens check
 
-                char *pathp;
-                pathp = getcwd(cwdbuf, sizeof(char)*100);
+            char *cwdbuf;
+            cwdbuf = malloc(sizeof(char)*100);
 
-                size_t pathlen = strlen(pathp);
-                size_t flen = strlen(direntp->d_name);
-                int arr_size = (pathlen + flen);
-                char rets[arr_size+1];
-                strconcat(pathp, direntp->d_name, rets, arr_size);               
-
+            char *pathp;
+            
+            if ((pathp = getcwd(cwdbuf, sizeof(char)*100)) == NULL) {
+                fprintf(stderr, "Cant get current working directory.\n");
                 free(cwdbuf);
+                exit(1);
             }
-        } else {
-        //S_ISDIR() to check if directory, if so add to stack
-        //TODO: create stack structure to hold dir, need to figure out what
-        //information to store, inode? file name? path to file?
-            printf("notreg file: %s\n", direntp->d_name);
+
+            size_t pathlen = strlen(pathp);
+            size_t flen = strlen(direntp->d_name);
+            int arr_size = (pathlen + flen);
+            char rets[arr_size+2];              /*+1 for '\0', +1 for '/'*/
+            strconcat(pathp, direntp->d_name, rets, arr_size);               
+
+            if (S_ISREG(info.st_mode)) {
+                printf("%s\n", rets);
+            }
+            
+            if (S_ISDIR(info.st_mode)) {
+                add_dir(rets);
+            }                        
+            free(cwdbuf);
+
         }
+        free(checks);
     }
+    print_dir();
     closedir(dirp);
 }
 
 void strconcat(char* path, char* fname, char* rets, int arr_size) 
 {
     int i = 0;
-
-    for (i = 0; i < arr_size; i++) 
+    int path_len = strlen(path);
+    for (i = 0; i < path_len; i++) 
         rets[i] = path[i];
-    rets[arr_size] = '\0';
+
+    rets[path_len] = '/';
+    rets[path_len+1] = '\0';
 
     strcat(rets, fname);
 }
-
-
- 
-    //check each file/dir in parent dir.
-        //for each file, call check()
-            //if dir and check() is ok then add dir to stack(data structure)
-        //once checked all files in current dir, then pop dir off stack and
-        //start again.
-
-    //store inode and dev_id in struct
-
 

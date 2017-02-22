@@ -6,4 +6,5 @@ void print_usage();
 long atoi_safe(char*);
 void fsct_dfs(char*, int, int, char*);
 void strconcat(char*, char*, char*, int);
+
 #endif
