@@ -1,10 +1,9 @@
 #ifndef FSCTLIB_H
 #define FSCTLIB_H
 
-int isadir(char*);
 void print_usage();
-long atoi_safe(char*);
+long atoi_safe(const char*);
 void fsct_dfs(char*, int, int, char*);
-void strconcat(char*, char*, char*, int);
+char* strconcat(const char*, const char*);
 
 #endif

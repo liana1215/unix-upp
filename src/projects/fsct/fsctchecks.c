@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "fsctchecks.h"
 
@@ -6,7 +7,7 @@
 struct check* make_checks(char* name, char* badchars) 
 {
     struct check* checks = {0};
-    checks = malloc(sizeof(checks)); //TODO: need to be freed
+    checks = malloc(sizeof(checks));
 
     const char* delim = "/";
     char* token;
@@ -16,7 +17,7 @@ struct check* make_checks(char* name, char* badchars)
 
     token = strtok(name, delim);
     while (token != NULL) {
-        char_count += strlen(token) + 1;
+        char_count += strlen(token);
         depth_count += 1;
 
         if (badchars != NULL) {
@@ -29,11 +30,10 @@ struct check* make_checks(char* name, char* badchars)
                 ptr++;
             }
         } 
-  
         token = strtok(NULL, delim);
     }
     checks->depth = depth_count;
-    checks->num_char = char_count;
+    checks->num_char = char_count + depth_count - 1;
     checks->bad_char = char_found;
     return checks; 
 }
