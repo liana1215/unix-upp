@@ -6,7 +6,7 @@
 struct check* make_checks(char* name, char* badchars) 
 {
     struct check* checks = {0};
-    checks = malloc(sizeof(checks));
+    checks = malloc(sizeof(struct check));
 
     const char* delim = "/";
     char* token;

@@ -47,7 +47,6 @@ int main(int argc, char** argv)
                 break;
         }
     }
-    init_stack();
     fsct_dfs(file, badchars, maxdepth, maxchars, nocasesens);
     return 0;
 }
