@@ -6,3 +6,4 @@
 - Handle case collisions more effectively.
 - Handle issues related to file and directory access.
 - Reorganize modules and functions.
+- Comment the functions.
