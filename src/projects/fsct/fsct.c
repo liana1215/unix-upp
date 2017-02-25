@@ -9,12 +9,11 @@
 int main(int argc, char** argv)
 {
     int opt = 0;
-    int max_depth = -1;
-    int max_chars = -1;
-    int nocases = -1;
+    int maxdepth = -1;
+    int maxchars = -1;
+    int nocasesens = 0;
     char* badchars = NULL;
     char* file = NULL;
-
 
     if (argc < 2) {
         print_usage();
@@ -31,16 +30,16 @@ int main(int argc, char** argv)
         {"nocasesens", no_argument, 0, 'n'}
     };
 
-    while ((opt = getopt_long(argc, argv, "m:p:b:n:",
+    while ((opt = getopt_long_only(argc, argv, "m:p:b:n:",
                 long_option, &opt_ind)) != -1) {
         switch(opt) {
-            case 'm': max_depth = atoi_safe(optarg); 
+            case 'm': maxdepth = atoi_safe(optarg); 
                 break;
-            case 'p': max_chars = atoi_safe(optarg);
+            case 'p': maxchars = atoi_safe(optarg);
                 break;
             case 'b': badchars = optarg;
                 break;
-            case 'n': nocases = 1;
+            case 'n': nocasesens = 1;
                 break;
             case '?': print_usage();
                 exit(1);
@@ -48,8 +47,7 @@ int main(int argc, char** argv)
                 break;
         }
     }
-    
     init_stack();
-    fsct_dfs(file, max_depth, max_chars, badchars);
+    fsct_dfs(file, badchars, maxdepth, maxchars, nocasesens);
     return 0;
 }

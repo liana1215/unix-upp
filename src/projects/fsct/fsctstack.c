@@ -82,7 +82,7 @@ void init_stack()
     head->filename = NULL;
     head->next = NULL;
 }
-   
+
 void add_dir(char* fullpath, char* path, char* file) 
 {
     treenode_t* cur = head;

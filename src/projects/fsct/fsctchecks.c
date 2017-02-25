@@ -3,7 +3,6 @@
 #include <string.h>
 #include "fsctchecks.h"
 
-
 struct check* make_checks(char* name, char* badchars) 
 {
     struct check* checks = {0};
@@ -19,7 +18,6 @@ struct check* make_checks(char* name, char* badchars)
     while (token != NULL) {
         char_count += strlen(token);
         depth_count += 1;
-
         if (badchars != NULL) {
             char* ptr = token;          
             while (*ptr) {
