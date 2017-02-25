@@ -32,25 +32,40 @@ long atoi_safe(const char* str)
     return ret;
 }
 
+void opendir_check(DIR* dirp, char* dirname)
+{
+    if (dirp == NULL) {
+        fprintf(stderr, "Cannot open a directory %s: %s\n",
+                dirname, strerror(errno));
+    }
+}
+
+
 void fsct_dfs(char* dirname, int maxdepth, int maxchars, char* badchars)
 {
     DIR* dirp;
     struct dirent* direntp;
-    dirp = opendir(dirname);
 
-    if (dirp == NULL) {
-        fprintf(stderr, "Cannot open a directory %s: %s\n",
-                dirname, strerror(errno));
-        exit(1);
-    }
+    dirp = opendir(dirname);
+    opendir_check(dirp, dirname);
 
     /*indicator for if dir found*/
     int nodir = 0; 
+        
+    init_node();
 
     while ((direntp = readdir(dirp)) != NULL) {
         struct stat info;
         lstat(direntp->d_name, &info);
-               
+        
+        add_node(direntp->d_name);        
+        char* found = find_node(direntp->d_name);   
+        if (found != NULL) {
+            fprintf(stdout, "%s/%s\n", dirname, direntp->d_name);
+            fprintf(stdout, "%s/%s\n", dirname, found);
+
+        }
+
         char* retsp = strconcat(dirname, direntp->d_name);               
 
         /*create tmp for consumption by make_checks*/
@@ -68,15 +83,18 @@ void fsct_dfs(char* dirname, int maxdepth, int maxchars, char* badchars)
  
         if (direntp->d_type & DT_DIR) {
             if ((strcmp(direntp->d_name, ".") != 0)
-            && (strcmp(direntp->d_name, "..") != 0)) {
-            add_dir(retsp, dirname, direntp->d_name);
-            nodir = 1;
+            && (strcmp(direntp->d_name, "..") != 0)
+            && (direntp->d_name[0] != '.')) {
+                add_dir(retsp, dirname, direntp->d_name);
+                nodir = 1;
             }
         }                        
         free(retsp);
         free(tmp);
         free(checks);
     }
+    clear_node();
+
     closedir(dirp);
 
     treenode_t* dirinfo;
