@@ -16,8 +16,8 @@ int dirclosed = 0;
 
 void print_usage() 
 {
-    printf("Usage: filename [--maxdepth num][--pathmax num]"
-           "[--badchars str][--nocasesens]\n");
+    printf("Usage: filename [-maxdepth num][-pathmax num]"
+           "[-badchars str][-nocasesens]\n");
 }
 
 long atoi_safe(const char* str) 
@@ -91,13 +91,14 @@ void fsct_dfs(char* dirname, char* badc, int maxd, int maxc, int nocasesens)
                 fprintf(stdout, "%s/%s\n", dirname, direntp->d_name);
                 fprintf(stdout, "%s/%s\n", dirname, found);
             }
-            if (direntp->d_type & DT_DIR)  
+            if (direntp->d_type & DT_DIR) 
                 fsct_dfs(retsp, badc, maxd, maxc, nocasesens);
         }
         free(retsp);
         free(tmp);
         free(checks);
     }   
+
     clear_node();
     closedir(dirp);
     dirclosed = 1;

@@ -1,7 +1,6 @@
 #ifndef FSCT_STACK_H
 #define FSCT_STACK_H
 
-
 struct node {
     char* name;
     struct node* next;
