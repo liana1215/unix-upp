@@ -1,12 +1,26 @@
+#include "fsctchecks.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "fsctchecks.h"
 
+/*
+ * make_checks() takes in the path name, and string of bad chars and checks the
+ * path against bad chars, while also calculating the depth and number of
+ * characters found in the path.
+ * @arg: name - Full path name.
+ * @arg: badchars - String of bad chars specified by caller.
+ * @ret: checks - A pointer to struct check.
+ *
+ * Note: strtok() called on name, and destructive as a side effect.
+ */
 struct check* make_checks(char* name, char* badchars) 
 {
-    struct check* checks = {0};
-    checks = malloc(sizeof(struct check));
+    struct check* checks = malloc(sizeof(struct check));
+    if (checks == NULL) {
+        perror("Failed as malloc of checks.\n");
+        exit(1);
+    }
 
     const char* delim = "/";
     char* token;
@@ -37,6 +51,10 @@ struct check* make_checks(char* name, char* badchars)
 }
 
 int check_badchar(char c, char* badchars) 
+/* A helper function to check if c is in badchars.
+ * @arg: c - a char found in path to be checked.
+ * @arg: badchars - string of bad chars 
+ */
 {
     char* ptr = badchars;
     while (*ptr) {
