@@ -1,3 +1,10 @@
+/**
+ * fsctchecks.c defines the function used to check for bad chars, and also is a
+ * helper function to calculate the depth of a given path, and number of
+ * characters found.
+ * date: 2/28/2017
+ * author: surfertas
+ */
 #include "fsctchecks.h"
 
 #include <stdio.h>
