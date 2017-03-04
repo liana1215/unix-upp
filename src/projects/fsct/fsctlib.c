@@ -1,3 +1,11 @@
+/**
+ * fsctlib.c - main library housing utility functions and algorithm to search
+ * the directory tree.
+ * date: 3/2/2017
+ * author: surfertas
+ */
+#define _XOPEN_SOURCE
+#include "fsctlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -11,34 +19,42 @@
 #include "fsctstack.h"
 
 
-#define _XOPEN_SOURCE
-int dirclosed = 0;
+static int dirclosed = 0;
 
+/* Prints the usage details to the command line */
 void print_usage() 
 {
     printf("Usage: filename [-maxdepth num][-pathmax num]"
            "[-badchars str][-nocasesens]\n");
 }
 
+/* Prints out an error message if not a integer, and returns -1
+ * @arg: str - string to check and convert to integer. 
+ * @ret: ret - returns long integer, or -1 if not a digit.
+*/
 long atoi_safe(const char* str) 
 {
     char* endptr = NULL;
     long ret = 0;
     errno = 0;
     ret = strtol(str, &endptr, 10);
-    if (endptr == str) {
-        fprintf(stderr, "Not a digit.\n");
-        exit(1);
+    if (*str == '\0' || *endptr != '\0') {
+        fprintf(stderr, "Not a numeric character: %c\n", *endptr);
+        return -1;
     }
     return ret;
 }
 
+/* Checks if directory was successfully opened.
+ * @arg: dirp - pointer to DIR object.
+ * @arg: dirname - name of directory.
+ */
 void opendir_check(DIR* dirp, char* dirname)
 {
     if (dirp == NULL) {
         fprintf(stderr, "Cannot open a directory %s: %s\n",
                 dirname, strerror(errno));
-        exit(1);
+        exit(1); //TODO: should not exit, should keep going, need to fix.
     }
 }
 
