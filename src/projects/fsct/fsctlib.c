@@ -4,7 +4,7 @@
  * date: 3/2/2017
  * author: surfertas
  */
-#define _XOPEN_SOURCE
+#define _BSD_SOURCE
 #include "fsctlib.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,18 +58,29 @@ void opendir_check(DIR* dirp, char* dirname)
     }
 }
 
+/* Checks directory name for symbolic link.
+ * @arg: direntp - a pointer to dirent struct.
+ * @ret: returns 1 if symbolic link, else 0.
+ */
 int dname_check(struct dirent* direntp)
 {
     return ((strcmp(direntp->d_name, ".") != 0)
-            && (strcmp(direntp->d_name, "..") != 0)
-            && (direntp->d_name[0] != '.'))?1:0;
+            && (strcmp(direntp->d_name, "..") != 0));
 }
 
+/* Checks path if passes criteria defined by max path, max number of chars and
+ * bad chars.
+ * @arg: cks - pointer to check struct defined in fsctchecks.h.
+ * @arg: maxd - max depth criteria.
+ * @arg: maxc - max number of characters allowed.
+ * @arg: badc - a string of bad chars.
+ * @ret: returns 1 if path name doesnt meet criteria.
+ */
 int path_checks(struct check* cks, int maxd, int maxc, char* badc)
 {
-    return ((maxd < 0?0:cks->depth > maxd)
-        || (maxc < 0?0:cks->num_char > maxc) 
-        || (badc == NULL?0:cks->bad_char == 1))?1:0;
+    return ((maxd >= 0 && cks->depth > maxd)
+        || (maxc >= 0 && cks->num_char > maxc) 
+        || (badc && cks->bad_char));
 }
 
 void fsct_dfs(char* dirname, char* badc, int maxd, int maxc, int nocasesens)
@@ -120,6 +131,11 @@ void fsct_dfs(char* dirname, char* badc, int maxd, int maxc, int nocasesens)
     dirclosed = 1;
 }
 
+/* Combines path name with file name, with "/" in between.
+ * @arg: path - name of path.
+ * @arg: fname - file name.
+ * @ret: newpath - concat string: pathname + / + filename.
+ */
 char* strconcat(const char* path, const char* fname) 
 {
     char* newpath = malloc(strlen(path)+strlen(fname)+2);
