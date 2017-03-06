@@ -4,6 +4,7 @@
 
 #include <termios.h>
 
+void print_usage();
 void display_info(struct termios*);
 
 #endif

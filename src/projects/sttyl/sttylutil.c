@@ -10,6 +10,19 @@
 #include    <sys/ioctl.h>
 #include    "sttyltables.h"
 
+
+/*
+ * Prints the usage info.
+ */
+void print_usage()
+{
+    printf("Usage: [SETTING] ...\n"
+           "Special characters:\n"
+           "erase CHAR    CHAR will erase the last character typed\n"
+           "intr CHAR     CHAR will send an interrupt signal\n"
+           "kill CHAR     CHAR will erase the current line\n");
+}
+
 void showsize()
 /*
  * Prints the terminal window size. 
