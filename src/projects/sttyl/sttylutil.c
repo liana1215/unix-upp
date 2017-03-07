@@ -111,7 +111,7 @@ void showflags(struct termios *ttyp, const struct flaginfo bits[], tcflag_t tcf)
  */
 void display_info(struct termios *ttyp)
 {
-    showbaud ( cfgetospeed( ttyp) );    /* get + show baud rate */
+    showbaud (cfgetospeed( ttyp));    /* get + show baud rate */
     showsize();                         /* show size of tty */
     showspecial(ttyp, special_chars);   
     showflags(ttyp, control_modes, ttyp->c_cflag);
@@ -119,6 +119,33 @@ void display_info(struct termios *ttyp)
     showflags(ttyp, local_modes, ttyp->c_lflag);
 }
 
+/*
+ * Sets special chars specified as input arg.
+ * @arg: ttyp - pointer to termios struct.
+ * @arg: argv - array of command line args.
+ */
+void set_specialchars(struct termios *ttyp, int argc, char**argv)
+{
+    int i = 0;
+    int j = 0;
+    
+    for (i = 1; i < argc; i++) {
+        for (j = 0; special_chars[j].flag != -1; j++) {
+            if (strcmp(argv[i], special_chars[j].name) == 0) {
+                if (argv[i+1] == NULL) {
+                    print_usage();
+                    exit(1);
+                }
 
+                ttyp->c_cc[special_chars[j].flag] = argv[i+1][0];
+                break;
+            }
+        }
+    }
+    if (tcsetattr( 0, TCSADRAIN, ttyp) != 0) {
+        perror("tcsetattr");
+        exit(1);
+    }
+}
 
 

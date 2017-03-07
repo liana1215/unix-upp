@@ -10,22 +10,22 @@
 const struct flaginfo local_modes[] = {
     { IEXTEN    , "iexten"},
     { ECHO      , "echo"},
-    { ECHOE     , "-echoe" },
-    { ECHOK     , "-echok"},
+    { ECHOE     , "echoe" },
+    { ECHOK     , "echok"},
     { -1        , NULL}
 };
 
 const struct flaginfo input_modes[] = {
     { BRKINT    , "brkint"},
-    { INPCK     , "-inpnk"},
+    { INPCK     , "inpnk"},
     { ICRNL     , "icrnl" },
-    { IXANY     , "-ixany"},
+    { IXANY     , "ixany"},
     { ONLCR     , "onlcr"},
     { -1        , NULL}
 };
 
 const struct flaginfo control_modes[] = {
-    { PARENB    , "-parenb"},
+    { PARENB    , "parenb"},
     { HUPCL     , "hupcl"},
     { CREAD     , "cread"},
     { -1        , NULL}
