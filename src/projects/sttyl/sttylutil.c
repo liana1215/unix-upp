@@ -7,6 +7,7 @@
 #include    "sttylutil.h"
 #include    <stdio.h>
 #include    <stdlib.h>
+#include    <string.h>
 #include    <sys/ioctl.h>
 #include    "sttyltables.h"
 
@@ -58,7 +59,7 @@ void showbaud( int thespeed )
     printf("baud; ");
 }
 
-void showspecial(struct termios *ttyp, const struct flaginfo bitnames[])
+void showspecial(struct termios *ttyp, const struct flaginfo bits[])
 /*
  * Displays the special chars.
  * @arg: ttyp - pointer to termios struct.
@@ -66,22 +67,41 @@ void showspecial(struct termios *ttyp, const struct flaginfo bitnames[])
  */
 {
     int i = 0;
-    for (i = 0; bitnames[i].flag != -1 ; i++) {
-        printf("%s = ^%c; ", bitnames[i].name,
-                            ttyp->c_cc[bitnames[i].flag]-1+'A');
+    for (i = 0; bits[i].flag != -1 ; i++) {
+        printf("%s = ^%c; ", bits[i].name,
+                            ttyp->c_cc[bits[i].flag]-1+'A');
     }
     printf("\n");
 }
 
-void showflags(const struct flaginfo bitnames[])
+char* negate_name(char* name)
+/*
+ * Negates name by prepend "~" to name.
+ * @arg: name - name to negate.
+ * @ret: retname - negated name.
+ */ 
+{
+    char* retname = malloc(strlen(name) + 2);
+    strcpy(retname, "-");
+    strcat(retname, name);
+    return retname;
+} 
+
+void showflags(struct termios *ttyp, const struct flaginfo bits[], tcflag_t tcf)
 /*
  * Displays the flags associated with flaginfo struct.
  * @arg: bitnames - an array of flag info structs
  */
 {
     int i = 0;
-    for (i = 0; bitnames[i].flag != -1 ; i++)
-        printf("%s ", bitnames[i].name);
+    for (i = 0; bits[i].flag != -1 ; i++)
+        if (tcf & bits[i].flag) {
+            printf("%s ", bits[i].name);
+        } else {
+            char* negname = negate_name((char*)bits[i].name);
+            printf("%s ", negname);
+        }
+
     printf("\n");
 }
 
@@ -94,9 +114,9 @@ void display_info(struct termios *ttyp)
     showbaud ( cfgetospeed( ttyp) );    /* get + show baud rate */
     showsize();                         /* show size of tty */
     showspecial(ttyp, special_chars);   
-    showflags(control_modes);
-    showflags(input_modes);
-    showflags(local_modes);
+    showflags(ttyp, control_modes, ttyp->c_cflag);
+    showflags(ttyp, input_modes, ttyp->c_iflag);
+    showflags(ttyp, local_modes, ttyp->c_lflag);
 }
 
 
