@@ -33,6 +33,7 @@ int main(int argc, char**argv)
         display_info(&ttyinfo);
     } else {
         set_specialchars(&ttyinfo, argc, argv);
+        set_modes(&ttyinfo, argc, argv);
     }
     //call tcsetattr returns ok if any set, so call tcetagain to check if all is
     //ok           

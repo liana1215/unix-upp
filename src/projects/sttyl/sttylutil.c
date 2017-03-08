@@ -82,6 +82,11 @@ char* negate_name(char* name)
  */ 
 {
     char* retname = malloc(strlen(name) + 2);
+    if (retname == NULL) {
+        perror("malloc");
+        exit(1);
+    }
+
     strcpy(retname, "-");
     strcat(retname, name);
     return retname;
@@ -100,8 +105,9 @@ void showflags(struct termios *ttyp, const struct flaginfo bits[], tcflag_t tcf)
         } else {
             char* negname = negate_name((char*)bits[i].name);
             printf("%s ", negname);
+            free(negname);
         }
-
+        
     printf("\n");
 }
 
@@ -147,5 +153,49 @@ void set_specialchars(struct termios *ttyp, int argc, char**argv)
         exit(1);
     }
 }
-
-
+//TODO: Generalize to handle all types of nodes
+/* Sets the modes specified by the arguments passed on command line.
+ * @arg: ttyp - pointer to termios struct.
+ * @arg: argc - number of args passed via command line.
+ * @arg: argv - array of args of type string.
+ */
+void set_modes(struct termios *ttyp, int argc, char** argv)
+{
+    int i = 0;
+    int j = 0;
+    int on = 1;
+    for (i = 1; i < argc; i++) {
+        if (argv[i][0] ==  '-') 
+            on = 0;
+        
+        char* tmp = malloc(strlen(argv[i] - 1));
+        if (tmp == NULL) {
+            perror("malloc");
+            exit(1);
+        }
+    
+        int k = 0;
+        for (k = 0; argv[i][k+1] != '\0'; k++)
+            tmp[k] = argv[i][k+1];
+        tmp[k] = '\0';
+            
+        for (j = 0; input_modes[j].flag != -1; j++) {
+            if (!on) {
+                if (strcmp(tmp, input_modes[j].name) == 0) {
+                    ttyp->c_iflag &= ~input_modes[j].flag;
+                    break;
+                }
+            } else {
+                if (strcmp(argv[i], input_modes[j].name) == 0) {
+                    ttyp->c_iflag |= input_modes[j].flag;
+                    break;
+                }
+            }
+        } 
+        free(tmp);
+    }
+    if (tcsetattr( 0, TCSADRAIN, ttyp) != 0) {
+        perror("tcsetattr");
+        exit(1);
+    }
+}
