@@ -133,8 +133,8 @@ void display_info(struct termios *ttyp)
 void set_specialchars(struct termios *ttyp, int argc, char**argv)
 {
     int i = 0;
-    int j = 0;
-    
+    int j = 0;   
+
     for (i = 1; i < argc; i++) {
         for (j = 0; special_chars[j].flag != -1; j++) {
             if (strcmp(argv[i], special_chars[j].name) == 0) {
@@ -153,7 +153,27 @@ void set_specialchars(struct termios *ttyp, int argc, char**argv)
         exit(1);
     }
 }
-//TODO: Generalize to handle all types of nodes
+
+tcflag_t switch_flag(int on, char* n1, char* n2, const struct flaginfo bits[], tcflag_t tcf)
+{
+    
+    int i = 0;
+    for (i = 0; bits[i].flag != -1; i++) {
+        if (!on) {
+            if (strcmp(n1, bits[i].name) == 0) {
+                tcf &= ~bits[i].flag;
+                break;
+            }
+        } else {
+            if (strcmp(n2, bits[i].name) == 0) {
+                tcf |= bits[i].flag;
+                break;
+            }
+        }
+    } 
+    return tcf;
+}
+
 /* Sets the modes specified by the arguments passed on command line.
  * @arg: ttyp - pointer to termios struct.
  * @arg: argc - number of args passed via command line.
@@ -162,8 +182,8 @@ void set_specialchars(struct termios *ttyp, int argc, char**argv)
 void set_modes(struct termios *ttyp, int argc, char** argv)
 {
     int i = 0;
-    int j = 0;
     int on = 1;
+
     for (i = 1; i < argc; i++) {
         if (argv[i][0] ==  '-') 
             on = 0;
@@ -174,24 +194,14 @@ void set_modes(struct termios *ttyp, int argc, char** argv)
             exit(1);
         }
     
-        int k = 0;
-        for (k = 0; argv[i][k+1] != '\0'; k++)
-            tmp[k] = argv[i][k+1];
-        tmp[k] = '\0';
-            
-        for (j = 0; input_modes[j].flag != -1; j++) {
-            if (!on) {
-                if (strcmp(tmp, input_modes[j].name) == 0) {
-                    ttyp->c_iflag &= ~input_modes[j].flag;
-                    break;
-                }
-            } else {
-                if (strcmp(argv[i], input_modes[j].name) == 0) {
-                    ttyp->c_iflag |= input_modes[j].flag;
-                    break;
-                }
-            }
-        } 
+        int j = 0;
+        for (j = 0; argv[i][j+1] != '\0'; j++)
+            tmp[j] = argv[i][j+1];
+        tmp[j] = '\0';
+           
+        ttyp->c_iflag = switch_flag(on, tmp, argv[i], input_modes, ttyp->c_iflag);
+        ttyp->c_lflag = switch_flag(on, tmp, argv[i], local_modes, ttyp->c_lflag);
+        ttyp->c_cflag = switch_flag(on, tmp, argv[i], control_modes, ttyp->c_cflag);
         free(tmp);
     }
     if (tcsetattr( 0, TCSADRAIN, ttyp) != 0) {
