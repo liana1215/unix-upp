@@ -165,7 +165,6 @@ tcflag_t switch_flag(int on, char* n1, char* n2, const struct flaginfo bits[], t
  * @ret: tcf - transformed bits, read to use for setting.
  */
 {
-    
     int i = 0;
     for (i = 0; bits[i].flag != -1; i++) {
         if (!on) {

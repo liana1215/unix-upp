@@ -1,3 +1,9 @@
+/*
+ * sttylutil.h - declares and exposes functions used by other programs related
+ * to sttyl.
+ * date: 3/2/2017
+ * author: Tasuku Miura
+ */
 #ifndef STTYLUTIL_H
 #define STTYLUTIL_H
 
