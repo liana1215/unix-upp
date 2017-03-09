@@ -155,6 +155,15 @@ void set_specialchars(struct termios *ttyp, int argc, char**argv)
 }
 
 tcflag_t switch_flag(int on, char* n1, char* n2, const struct flaginfo bits[], tcflag_t tcf)
+/* Switchs flag on and off depending if user specified on or off. The function
+ * iterates through struct to find any matches.
+ * @arg: on - flag indicating if mode is on or off.
+ * @arg: n1 - name if off was specified.
+ * @arg: n2 - name if on was specified.
+ * @arg: bits - flaginfo struct.
+ * @arg: tcf - flag of mode, where bits contain the relevant information.
+ * @ret: tcf - transformed bits, read to use for setting.
+ */
 {
     
     int i = 0;

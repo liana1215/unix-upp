@@ -12,6 +12,8 @@ const struct flaginfo local_modes[] = {
     { ECHO      , "echo"},
     { ECHOE     , "echoe" },
     { ECHOK     , "echok"},
+    { ICANON    , "icanon"},
+    { ISIG      , "isig"},
     { -1        , NULL}
 };
 
