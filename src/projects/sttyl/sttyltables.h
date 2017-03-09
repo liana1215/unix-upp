@@ -1,3 +1,9 @@
+/*
+ * sttyltables.h - declares the arrays related to the different types of flags
+ * available in the light weight version of stty.
+ * date: 3/2/2017
+ * author: Tasuku Miura
+ */
 #ifndef TABLES_H
 #define TABLES_H
 
