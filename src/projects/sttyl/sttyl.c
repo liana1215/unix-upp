@@ -32,6 +32,8 @@ int main(int argc, char**argv)
     if (argc < 2) {
         display_info(&ttyinfo);
     } else {
+        //TODO: the characters after special chars should not trigger invalid
+        //response...this needs to be fixed.
         check_valid(argc, argv);
         set_specialchars(&ttyinfo, argc, argv);
         set_modes(&ttyinfo, argc, argv);
