@@ -22,7 +22,13 @@ const struct flaginfo input_modes[] = {
     { INPCK     , "inpnk"},
     { ICRNL     , "icrnl" },
     { IXANY     , "ixany"},
+    { -1        , NULL}
+};
+
+const struct flaginfo output_modes[] = {
+    { OPOST    , "opost"},
     { ONLCR     , "onlcr"},
+    { OCRNL     , "ocrnl" },
     { -1        , NULL}
 };
 

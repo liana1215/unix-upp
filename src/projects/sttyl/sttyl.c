@@ -21,9 +21,10 @@
 
 int main(int argc, char**argv)
 {
-    struct  termios ttyinfo;                  /* this struct holds tty info */
-     
-    if ( tcgetattr( 0 , &ttyinfo ) == -1 ){   /* get info */
+    struct  termios ttyinfo;               /* this struct holds tty info */
+    
+
+    if (tcgetattr(0 , &ttyinfo) == -1 ){   /* get info */
         perror( "cannot get params about stdin");
         exit(1);
     }
@@ -31,8 +32,11 @@ int main(int argc, char**argv)
     if (argc < 2) {
         display_info(&ttyinfo);
     } else {
+        check_valid(argc, argv);
         set_specialchars(&ttyinfo, argc, argv);
         set_modes(&ttyinfo, argc, argv);
     }
+
+   
     return 0;
 }

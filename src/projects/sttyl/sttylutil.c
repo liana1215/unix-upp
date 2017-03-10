@@ -122,6 +122,7 @@ void display_info(struct termios *ttyp)
     showspecial(ttyp, special_chars);   
     showflags(ttyp, control_modes, ttyp->c_cflag);
     showflags(ttyp, input_modes, ttyp->c_iflag);
+    showflags(ttyp, output_modes, ttyp->c_oflag);
     showflags(ttyp, local_modes, ttyp->c_lflag);
 }
 
@@ -179,6 +180,7 @@ tcflag_t switch_flag(int on, char* n1, char* n2, const struct flaginfo bits[], t
             }
         }
     } 
+
     return tcf;
 }
 
@@ -208,6 +210,7 @@ void set_modes(struct termios *ttyp, int argc, char** argv)
         tmp[j] = '\0';
            
         ttyp->c_iflag = switch_flag(on, tmp, argv[i], input_modes, ttyp->c_iflag);
+        ttyp->c_oflag = switch_flag(on, tmp, argv[i], output_modes, ttyp->c_oflag);
         ttyp->c_lflag = switch_flag(on, tmp, argv[i], local_modes, ttyp->c_lflag);
         ttyp->c_cflag = switch_flag(on, tmp, argv[i], control_modes, ttyp->c_cflag);
         free(tmp);
@@ -217,3 +220,71 @@ void set_modes(struct termios *ttyp, int argc, char** argv)
         exit(1);
     }
 }
+
+int check_modes(const struct flaginfo bits[], int found, char* name)
+/* Checks to see if name is in bits[]
+ * @arg: bits - array of flaginfo structs.
+ * @arg: found - state of where or not the argument has been found.
+ * @arg: name - name of flag
+ * @ret: retfound - returns 1 if found, or the state of found prior to call.
+ */
+{
+    int retfound = found;
+    int i = 0;
+    for (i = 0; bits[i].flag != -1; i++) {
+        if (strcmp(bits[i].name, name) == 0) {
+            retfound = 1;
+            break;
+        }
+    }
+    return retfound;
+}
+
+/* General check to see if any of the arguments are invalid.
+ * @arg: argc - number of arguments.
+ * @arg: argv - array of arguments.
+ * 
+ * Note: does not interrupt the flow of the program. Will just output the
+ * invalid argument to stdout.
+ */
+void check_valid(int argc, char** argv)
+{
+    int i = 0;
+    for (i = 1; i < argc; i++) {
+        int flag = 0;
+        char* tmp = malloc(strlen(argv[i] -1));
+        if (tmp == NULL) {
+            perror("malloc");
+            exit(1);
+        }
+
+        if (argv[i][0] == '-') {
+            flag = 1;
+            int j = 0;
+            for (j = 0; argv[i][j+1] != '\0'; j++)
+                tmp[j] = argv[i][j+1];
+            tmp[j] = '\0';
+        }
+
+        char* name;
+        if (flag) {
+           name = tmp;
+        } else {
+           name = argv[i];
+        }
+
+        int found = 0;
+        found = check_modes(special_chars, found, name);
+        found = check_modes(input_modes, found, name);
+        found = check_modes(output_modes, found, name);
+        found = check_modes(control_modes, found, name);
+        found = check_modes(local_modes, found, name);
+
+        if (!found)
+            printf("invalid argument: %s\n", argv[i]);
+        free(tmp);
+
+    }
+}
+
+         

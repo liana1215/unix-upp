@@ -1,5 +1,7 @@
-#
-#
+#Makefile to compile executable for the program sttyl.c, which is a light weight
+#version of stty.
+#date: 3/2/2017
+#author: Tasuku Miura
 CC  = gcc
 CFLAGS = -Wall -g
 

@@ -17,6 +17,7 @@ struct flaginfo {
 
 extern const struct flaginfo local_modes[];
 extern const struct flaginfo input_modes[];
+extern const struct flaginfo output_modes[];
 extern const struct flaginfo control_modes[];
 extern const struct flaginfo special_chars[];
 
