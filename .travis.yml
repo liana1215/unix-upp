@@ -1,3 +1,6 @@
 sudo: false
 language: C
-script: make -C ./src/projects/sttyl
+script: 
+    - make -C ./src/projects/sttyl
+    - make -C ./src/projects/wow
+    - make -C ./stc/projects/fsct
