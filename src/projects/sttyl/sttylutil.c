@@ -21,7 +21,12 @@ void print_usage()
            "Special characters:\n"
            "erase CHAR    CHAR will erase the last character typed\n"
            "intr CHAR     CHAR will send an interrupt signal\n"
-           "kill CHAR     CHAR will erase the current line\n");
+           "kill CHAR     CHAR will erase the current line\n"
+           "...\n"
+           "[control | input | output | local] ...\n"
+           "-brkint       turns off brkint\n"
+           "brkint        turns on brkint\n"
+           "...\n");
 }
 
 void showsize()
@@ -54,6 +59,8 @@ void showbaud( int thespeed )
         case B2400: printf("2400 ");   break;
         case B4800: printf("4800 ");   break;
         case B9600: printf("9600 ");   break;
+        case B19200: printf("19200 "); break;
+        case B38400: printf("38400 "); break;
         default:    printf("Fast ");   break;
     }
     printf("baud; ");
