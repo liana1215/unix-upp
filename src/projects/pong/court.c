@@ -59,10 +59,13 @@ void set_up()
 
     print_score();
     paddle_init();
+    init_clock();
     refresh();
 
-    signal( SIGALRM, ball_move );
+  
+    signal(SIGALRM, ball_move);
     set_ticker( 1000 / TICKS_PER_SEC ); /* Send millisecs per tick */
+
 }
 
 /*

@@ -6,12 +6,15 @@
 #ifndef PONG_GLOBAL_H
 #define PONG_GLOBAL_H
 
+#include <time.h>
 #include "ball.h"
 #include "paddle.h"
 #include "court.h"
 
 
-extern int balls_left;
+extern int balls_left;      /* Number of balls left */
+extern time_t wall_clock;   /* Clock to keep track of game */
+
 extern struct ppcourt the_court;
 extern struct pppaddle the_paddle;
 extern struct ppball the_ball;

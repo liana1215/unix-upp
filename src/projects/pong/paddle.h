@@ -7,8 +7,7 @@
 #ifndef PADDLE_H
 #define PADDLE_H
 
-
-#define PADLEN  6
+#define PADLEN      6
 #define PAD_SYMBOL '#'
 
 struct pppaddle {
@@ -19,6 +18,5 @@ struct pppaddle {
 void paddle_init();
 void paddle_up();
 void paddle_down();
-//void paddle_contact();
 
 #endif

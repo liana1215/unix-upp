@@ -72,7 +72,7 @@ void paddle_down()
 {
     clear_paddle();
 
-    if (the_paddle.pad_bot + 1 < the_court.bot_edge) {
+    if (the_paddle.pad_bot < the_court.bot_edge) {
         the_paddle.pad_top += 1;
         the_paddle.pad_bot = the_paddle.pad_top + the_paddle.pad_len;
     }

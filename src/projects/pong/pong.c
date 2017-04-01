@@ -29,6 +29,7 @@ struct ppball the_ball ;
 struct ppcourt the_court;
 struct pppaddle the_paddle;
 int balls_left = 10;
+time_t wall_clock = 0;
 
 /** the main loop **/
 
