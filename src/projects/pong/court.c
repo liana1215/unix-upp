@@ -37,8 +37,8 @@ void set_up()
     signal(SIGINT, SIG_IGN);    /* Ignore SIGINT */
     mvaddch(the_ball.y_pos, the_ball.x_pos, the_ball.symbol);
 
-    uint32_t row = LINES - COURT_PAD;
-    uint32_t col = COLS - COURT_PAD;
+    int row = LINES - COURT_PAD;
+    int col = COLS - COURT_PAD;
     the_court.top_edge = COURT_PAD;
     the_court.left_edge = COURT_PAD;
     the_court.bot_edge = row;
