@@ -1,4 +1,4 @@
-/* One player pong, based on helper code found in Bruce Molay books
+/* One player pong, based on helper code found in the book by Bruce Molay
  * Understanding Unix/Linux Programming.
  * date: 3/29/2017
  * author: Tasuku Miura
