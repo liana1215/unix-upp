@@ -4,3 +4,4 @@ script:
     - make -C ./src/projects/sttyl
     - make -C ./src/projects/wow
     - make -C ./src/projects/fsct
+	- make -C ./src/projects/pong
