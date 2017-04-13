@@ -19,15 +19,26 @@
 
 void	setup();
 
-int main()
+int main(int argc, char** argv)
 {
 	char	*cmdline, *prompt, **arglist;
 	int	result;
+    FILE *fp;
 
-	prompt = DFL_PROMPT ;
+    if (argc > 1) {
+        if ((fp = fopen(argv[1], "r")) == NULL) {
+            perror("Cant open file:");
+            exit(EXIT_FAILURE);
+        }
+        prompt = NULL;
+    } else {
+        fp = stdin;
+        prompt = DFL_PROMPT ;
+    }
+        
 	setup();
 
-	while ( (cmdline = next_cmd(prompt, stdin)) != NULL ){
+	while ( (cmdline = next_cmd(prompt, fp)) != NULL ){
 		if ( (arglist = splitline(cmdline)) != NULL  ){
 			result = process(arglist);
 			freelist(arglist);
