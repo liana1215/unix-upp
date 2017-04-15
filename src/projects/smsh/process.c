@@ -2,6 +2,7 @@
 #include	<stdlib.h>
 #include	<unistd.h>
 #include	<signal.h>
+#include    <string.h>
 #include	<sys/wait.h>
 #include	"smsh.h"
 #include	"builtin.h"
@@ -40,6 +41,7 @@ int process(char *args[])
 		rv = do_control_command(args);
 	else if ( ok_to_execute() )
 		rv = do_command(args);
+
 	return rv;
 }
 
@@ -94,3 +96,54 @@ int execute(char *argv[])
 	}
 	return child_info;
 }
+
+
+char* var_sub_main(char *str)
+/*
+ * Checks if string has any variable replacement candidates searching for $ with
+ * in the provided string. Called before the processing step.
+ * @args: str - Full string to search.
+ * @rets: string with any variables replaced with the mapped value.
+ */
+{
+    FLEXSTR fname;                      /* Placeholder for new string */
+    int found;
+
+    while (1) {
+        char tmp[2048];                 /* Placeholder for string after $ */
+        char *cp;
+        fs_init(&fname, 0);
+
+        if ((cp = strchr(str, '$')) == NULL)
+            break;
+
+        if (*--cp == '\\')              /* Checks whether to ignore $ */
+            break;
+        
+        cp++;
+        int i = 0;
+        while (*++cp != '\0' && strchr(" ./$", *cp) == NULL) { 
+            tmp[i] = *cp; i++;
+        }
+        tmp[i] = '\0';                  /* tmp now contains the target */
+
+        char* val = VLlookup(tmp);      /* Look up tmp and return mapped val */
+        if (strcmp(val, "") == 0)
+            break;
+
+        found = 0;
+        for(cp = str; *cp; cp++) {
+            if (*cp != '$' || found)
+                fs_addch(&fname, *cp);
+            else if (!found ) {
+                fs_addstr(&fname, val);
+                cp+=i;
+                found = 1;
+            }
+        }
+        fs_addch(&fname, '\0');
+        str = fs_getstr(&fname);
+    }
+    return str;
+}
+
