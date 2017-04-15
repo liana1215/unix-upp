@@ -1,7 +1,7 @@
-// Header file for builtin.c
-// author: Tasuku Miura
-// date: 4/15/2017
-
+/* Header file for builtin.c
+ * author: Tasuku Miura
+ * date: 4/15/2017
+ */
 #ifndef	BUILTIN_H
 #define	BUILTIN_H
 
