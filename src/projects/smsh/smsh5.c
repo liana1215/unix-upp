@@ -5,17 +5,17 @@
  * author: Tasuku Miura
  */
 #include    <ctype.h>
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<unistd.h>
-#include	<signal.h>
-#include	<sys/wait.h>
+#include    <stdio.h>
+#include    <stdlib.h>
+#include    <unistd.h>
+#include    <signal.h>
+#include    <sys/wait.h>
 #include    "flexstr.h"
-#include	"process.h"
-#include	"smsh.h"
-#include	"splitline.h"
+#include    "process.h"
+#include    "smsh.h"
+#include    "splitline.h"
 #include    "string.h"
-#include	"varlib.h"
+#include    "varlib.h"
 
 
 #define	DFL_PROMPT	"> "
