@@ -1,5 +1,7 @@
 /* builtin.c
- * contains the switch and the functions for builtin commands
+ * Contains the switch and the functions for builtin commands
+ * author: Tasuku Miura
+ * date: 4/15/2017
  */
 #include	"builtin.h"
 #include	<stdio.h>
@@ -12,11 +14,15 @@
 #include	"varlib.h"
 #include	"smsh.h"
 
+static int is_assign_var(char *cmd, int *resultp);
 static int is_exit_request(const char*, int*);
 static int is_change_dir(char**, int*);
+static int is_list_vars(char *cmd, int *resultp);
 static int is_export(char**, int*);
 static int is_read_var(char**, int*);
 static int is_comment(char* cmd, int* resultp);
+static int assign(char *str);
+static int okname(char *str);
 
 /*
  * Runs command if built in.
@@ -44,13 +50,32 @@ int is_builtin(char **args, int *resultp)
 	return 0;
 }
 
-/* 
- * Checks if cmd is a legal assignment.
+/*
+ * Step through args.  REPLACE any arg with leading $ with the
+ * value for that variable or "" if no match.
+ * @args: array of char*
+ */
+void varsub(char **args)
+{
+	int	i;
+	char	*newstr;
+
+	for(i = 0 ; args[i] != NULL ; i++)
+		if (args[i][0] == '$'){
+			newstr = VLlookup(args[i]+1);
+			if (newstr == NULL)
+				newstr = "";
+			free(args[i]);
+			args[i] = strdup(newstr);
+		}
+}
+
+static int is_assign_var(char *cmd, int *resultp)
+/* Checks if cmd is a legal assignment.
  * @args: cmd - command of type char*.
  * @args: resultp - returns 0 if built in command executed without error.
  * @rets: returns 1 if cmd was built in, 0 otherwise.
  */
-int is_assign_var(char *cmd, int *resultp)
 {
 	if (strchr(cmd, '=') != NULL){
 		*resultp = assign(cmd);
@@ -60,13 +85,12 @@ int is_assign_var(char *cmd, int *resultp)
 	return 0;
 }
 
-/* 
- * Checks if command is "set" : if so list vars.
+static int is_list_vars(char *cmd, int *resultp)
+/* Checks if command is "set" : if so list vars.
  * @args: cmd - command to check.
  * @args: resultp - 0 if built in and executes successfully.
  * @rets: returns 1 if built in, 0 otherwise.
  */
-int is_list_vars(char *cmd, int *resultp)
 {
 	if (strcmp(cmd,"set") == 0){	     /* 'set' command? */
 		VLlist();
@@ -76,11 +100,12 @@ int is_list_vars(char *cmd, int *resultp)
 	return 0;
 }
 
-/*
- * if an export command, then export it and ret 1
- * else ret 0 
-*/
 static int is_export(char **args, int *resultp)
+/* Checks if export command.
+ * @args: args - array of char*.
+ * @args: resultp - 0 if built in executes correctly.
+ * @rets: rv - 1 if built in, 0 otherwise.
+ */
 {
 	if (strcmp(args[0], "export") == 0){
 		if (args[1] != NULL && okname(args[1]))
@@ -93,15 +118,18 @@ static int is_export(char **args, int *resultp)
 }
 
 static void path_err(const char *msg)
-/* Handles syntax errors in path names in the call to is_change_dir. */
+/* Handles syntax errors in path names in the call to is_change_dir. 
+ * @args: msg - message to display
+ */
 {
     fprintf(stderr, "path name error: %s\n", msg);
 }
 
-
 static int is_change_dir(char **args, int *resultp)
-/* 
- * Checks if argument is cd command, if so than executes.
+/* Checks if argument is cd command, if so than executes.
+ * @args: args - array of char*.
+ * @args: resultp - 0 if built in executes correctly.
+ * @rets: rv - 1 if built in, 0 otherwise.
  */
 {
     int rv = 0;
@@ -130,8 +158,7 @@ static int is_change_dir(char **args, int *resultp)
             
 
 static int is_exit_request(const char* cmd, int* resultp)
-/*
- * Exits with success if cmd is to exit.
+/* Exits with success if cmd is to exit.
  */
 {
     if (strcmp(cmd, "exit") == 0) {
@@ -141,6 +168,11 @@ static int is_exit_request(const char* cmd, int* resultp)
 }
 
 static int is_read_var(char** args, int* resultp)
+/* Checks if cmd is 'read'.
+ * @args: args - array of char*.
+ * @args: resultp - 0 if built in executes correctly.
+ * @rets: rv - 1 if built in, 0 otherwise.
+ */
 {
     if (strcmp(args[0], "read") == 0 && okname(args[1])) {
         char buf[1024];
@@ -154,6 +186,11 @@ static int is_read_var(char** args, int* resultp)
 }
 
 static int is_comment(char* cmd, int* resultp)
+/* Checks if cmd is '#', comment indicator.
+ * @args: cmd - char.
+ * @args: resultp - 0 if built in executes correctly.
+ * @rets: rv - 1 if built in, 0 otherwise.
+ */
 {
     if (cmd[0] == '#') {
         *resultp = 0;
@@ -162,11 +199,11 @@ static int is_comment(char* cmd, int* resultp)
     return 0;
 }
 
-int assign(char *str)
-/*
- * purpose: execute name=val AND ensure that name is legal
- * returns: -1 for illegal lval, or result of VLstore 
- * warning: modifies the string, but retores it to normal
+static int assign(char *str)
+/* Execute name=val AND ensure that name is legal.
+ * @args: str - name
+ * @rets: rv - returns: -1 for illegal lval, or result of VLstore
+ * Note: modifies the string, but restores it to normal
  */
 {
 	char	*cp;
@@ -179,10 +216,10 @@ int assign(char *str)
 	return rv;
 }
 
-int okname(char *str)
-/*
- * purpose: determines if a string is a legal variable name
- * returns: 0 for no, 1 for yes
+static int okname(char *str)
+/* Determines if a string is a legal variable name.
+ * @args: str - name.
+ * @rets: 0 for no, 1 for yes.
  */
 {
 	char	*cp;
@@ -192,24 +229,4 @@ int okname(char *str)
 			return 0;
 	}
 	return (cp != str);	/* no empty strings, either */
-}
-
-/*
- * step through args.  REPLACE any arg with leading $ with the
- * value for that variable or "" if no match.
- * note: this is NOT how regular sh works
- */
-void varsub(char **args)
-{
-	int	i;
-	char	*newstr;
-
-	for(i = 0 ; args[i] != NULL ; i++)
-		if (args[i][0] == '$'){
-			newstr = VLlookup(args[i]+1);
-			if (newstr == NULL)
-				newstr = "";
-			free(args[i]);
-			args[i] = strdup(newstr);
-		}
 }
