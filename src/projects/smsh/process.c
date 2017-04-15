@@ -1,110 +1,31 @@
+/* process.c
+ * Command processing layer: handles layers of processing
+ * date: 4/15/2017
+ * author: Tasuku Miura
+ */
+#include	"process.h"
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<unistd.h>
 #include	<signal.h>
 #include    <string.h>
 #include	<sys/wait.h>
-#include	"smsh.h"
 #include	"builtin.h"
-#include	"varlib.h"
 #include	"controlflow.h"
-#include	"process.h"
+#include	"smsh.h"
+#include	"varlib.h"
 
 
-/* process.c
- * command processing layer: handles layers of processing
- * 
- * The process(char **arglist) function is called by the main loop
- * It sits in front of the do_command function which sits 
- * in front of the execute() function.  This layer handles
- * two main classes of processing:
- *	a) process - checks for flow control (if, while, for ...)
- * 	b) do_command - does the command by 
- *		         1. Is command built-in? (exit, set, read, cd, ...)
- *                       2. If not builtin, run the program (fork, exec...)
- *                    - also does variable substitution (should be earlier)
- */
+static int do_command(char **args);
+static int execute(char *argv[]);
 
-
-int process(char *args[])
-/*
- * purpose: process user command: this level handles flow control
- * returns: result of processing command
- *  errors: arise from subroutines, handled there
- */
-{
-	int		rv = 0;
-
-	if ( args[0] == NULL )
-		rv = 0;
-	else if ( is_control_command(args[0]) )
-		rv = do_control_command(args);
-	else if ( ok_to_execute() )
-		rv = do_command(args);
-
-	return rv;
-}
-
-/*
- * do_command
- *   purpose: do a command - either builtin or external
- *   returns: result of the command
- *    errors: returned by the builtin command or from exec,fork,wait
- *      note: this version does variable substitution: not where sh does it
- *
- */
-int do_command(char **args)
-{
-	void varsub(char **);
-	int  is_builtin(char **, int *);
-	int  rv;
-
-	varsub(args);
-	if ( is_builtin(args, &rv) )
-		return rv;
-	rv = execute(args);
-	return rv;
-}
-
-int execute(char *argv[])
-/*
- * purpose: run a program passing it arguments
- * returns: status returned via wait, or -1 on error
- *  errors: -1 on fork() or wait() errors
- */
-{
-	extern char **environ;		/* note: declared in <unistd.h>	*/
-	int	pid ;
-	int	child_info = -1;
-
-	if ( argv[0] == NULL )		/* nothing succeeds		*/
-		return 0;
-
-	if ( (pid = fork())  == -1 )
-		perror("fork");
-	else if ( pid == 0 ){
-		environ = VLtable2environ();
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		execvp(argv[0], argv);
-		perror("cannot execute command");
-		exit(1);
-	}
-	else {
-		if ( wait(&child_info) == -1 )
-			perror("wait");
-	}
-	return child_info;
-}
-
-
-char* var_sub_main(char *str)
 /*
  * Checks if string has any variable replacement candidates searching for $ with
  * in the provided string. Called before the processing step.
  * @args: str - Full string to search.
  * @rets: string with any variables replaced with the mapped value.
  */
+char* var_sub_main(char *str)
 {
     FLEXSTR fname;                      /* Placeholder for new string */
     int found;
@@ -146,4 +67,69 @@ char* var_sub_main(char *str)
     }
     return str;
 }
+/*
+ * Process user command: this level handles flow control.
+ * @args: array of char*
+ * @rets: result of processing command
+ */
+int process(char *args[])
+{
+	int		rv = 0;
 
+	if ( args[0] == NULL )
+		rv = 0;
+	else if ( is_control_command(args[0]) )
+		rv = do_control_command(args);
+	else if ( ok_to_execute() )
+		rv = do_command(args);
+
+	return rv;
+}
+
+static int do_command(char **args)
+/* Do a command - either builtin or external
+ * @args: array of char*
+ * @rets: result of the command
+ */
+{
+	void varsub(char **);
+	int  is_builtin(char **, int *);
+	int  rv;
+
+	varsub(args);
+	if ( is_builtin(args, &rv) )
+		return rv;
+	rv = execute(args);
+	return rv;
+}
+
+static int execute(char *argv[])
+/* Run a program passing it arguments
+ * @args: argv - array of char*
+ * @rets: status returned via wait, or -1 on error
+ * Note: errors -1 on fork() or wait() errors
+ */
+{
+	extern char **environ;		/* note: declared in <unistd.h>	*/
+	int	pid ;
+	int	child_info = -1;
+
+	if ( argv[0] == NULL )		/* nothing succeeds		*/
+		return 0;
+
+	if ( (pid = fork())  == -1 )
+		perror("fork");
+	else if ( pid == 0 ){
+		environ = VLtable2environ();
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+		execvp(argv[0], argv);
+		perror("cannot execute command");
+		exit(1);
+	}
+	else {
+		if ( wait(&child_info) == -1 )
+			perror("wait");
+	}
+	return child_info;
+}

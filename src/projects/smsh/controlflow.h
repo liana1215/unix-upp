@@ -5,7 +5,7 @@
  */
 
 #ifndef CONTROLFLOW_H
-#define
+#define CONTROLFLOW_H
 
 int is_control_command(char *);
 int do_control_command(char **);
