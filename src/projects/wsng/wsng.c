@@ -5,10 +5,12 @@
 #include	<netdb.h>
 #include	<errno.h>
 #include	<unistd.h>
+#include    <sys/time.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
 #include	<sys/param.h>
 #include	<signal.h>
+#include    <time.h>
 #include	"socklib.h"
 
 /*
@@ -369,10 +371,27 @@ modify_argument(char *arg, int len)
    if content_type is NULL then don't send content type
    ------------------------------------------------------ */
 
+/* 
+ * show_time - displays time in a format fit for human consumption.
+ * @rets - null terminated string. 
+ */
+char* show_time()
+{
+    struct timeval tv;
+    
+    if (gettimeofday(&tv, NULL) == -1)
+        perror("gettimeofday");
+
+    return ctime(&tv.tv_sec);
+}
+
+
+
 void
 header( FILE *fp, int code, char *msg, char *content_type )
 {
 	fprintf(fp, "HTTP/1.0 %d %s\r\n", code, msg);
+    fprintf(fp, "Date: %s\r\n", show_time());
 	if ( content_type )
 		fprintf(fp, "Content-type: %s\r\n", content_type );
 }
