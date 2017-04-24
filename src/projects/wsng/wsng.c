@@ -221,6 +221,43 @@ int startup(int ac, char *av[],char host[], int *portnump)
 	return sock;
 }
 
+typedef struct content_type {
+    char* ext;
+    char* content;
+    struct content_type* next;
+} content_type;
+
+
+content_type* init_type(char* ext, char* content) {
+    content_type* newtype = malloc(sizeof(content_type));
+    if (newtype != NULL) {
+        newtype->ext = ext;
+        newtype->content = content;
+        newtype->next = NULL;
+    }
+    return newtype;
+}
+
+content_type* add_type(content_type* table, char* ext, char* content) {
+    content_type* curr;
+    curr = table;
+    while (curr->next != NULL)
+        curr = curr->next;
+
+    curr->next = init_type(ext, content);
+    return curr->next;
+}
+
+void free_table(content_type* head) {
+    content_type* curr, *tmp;
+    curr = head;
+    while (curr->next != NULL) {
+        tmp = curr;
+        curr=curr->next;
+        free(tmp);
+    }
+}
+    
 
 /*
  * opens file or dies
@@ -235,24 +272,38 @@ void process_config_file(char *conf_file, int *portnump)
 	FILE	*fp;
 	char	rootdir[VALUE_LEN] = SERVER_ROOT;
 	char	param[PARAM_LEN];
-	char	value[VALUE_LEN];
+	char	val1[VALUE_LEN];
+    char    val2[VALUE_LEN];
 	int	port;
-	int	read_param(FILE *, char *, int, char *, int );
+	int	read_param(FILE *, char *, int, char *, int, char*);
 
 	/* open the file */
 	if ( (fp = fopen(conf_file,"r")) == NULL )
 		fatal("Cannot open config file %s", conf_file);
-
+    
+    content_type* table, *head;
+    table = init_type("DEFAULT", "text/plain");
+    head = table;
+    
+   
 	/* extract the settings */
-	while( read_param(fp, param, PARAM_LEN, value, VALUE_LEN) != EOF )
+	while( read_param(fp, param, PARAM_LEN, val1, VALUE_LEN, val2) != EOF )
 	{
-		if ( strcasecmp(param,"server_root") == 0 )
-			strcpy(rootdir, value);
-		if ( strcasecmp(param,"port") == 0 )
-			port = atoi(value);
+		if ( strcasecmp(param,"server_root") == 0 ) {
+			strcpy(rootdir, val1);
+            printf("%s %s\n", rootdir, val1);
+        }
+		if ( strcasecmp(param,"port") == 0 ) {
+			port = atoi(val1);
+            printf("%s\n", val1);
+        }
+        if ( strcasecmp(param,"type") == 0 ) {
+            add_type(table, val1, val2);
+            printf("%s %s %s\n", param, val1, val2);
+        }
 	}
 	fclose(fp);
-
+    free_table(head);   
 	/* act on the settings */
 	if (chdir(rootdir) == -1)
 		oops("cannot change to rootdir", 2);
@@ -270,13 +321,13 @@ void process_config_file(char *conf_file, int *portnump)
  *   returns -- EOF at eof and 1 on good data
  *
  */
-int read_param(FILE *fp, char *name, int nlen, char* value, int vlen)
+int read_param(FILE *fp, char *name, int nlen, char* val1, int vlen, char* val2)
 {
 	char	line[LINELEN];
 	int	c;
 	char	fmt[100] ;
 
-	sprintf(fmt, "%%%ds%%%ds", nlen, vlen);
+	sprintf(fmt, "%%%ds%%%ds%%%ds", nlen, vlen, vlen);
 
 	/* read in next line and if the line is too long, read until \n */
 	while( fgets(line, LINELEN, fp) != NULL )
@@ -284,7 +335,9 @@ int read_param(FILE *fp, char *name, int nlen, char* value, int vlen)
 		if ( line[strlen(line)-1] != '\n' )
 			while( (c = getc(fp)) != '\n' && c != EOF )
 				;
-		if ( sscanf(line, fmt, name, value ) == 2 && *name != '#' )
+
+        int nval = sscanf(line, fmt, name, val1, val2 );
+		if ( (nval == 2 || nval == 3) && *name != '#' )
 			return 1;
 	}
 	return EOF;
@@ -309,7 +362,9 @@ void process_rq(char *rq, FILE *fp)
 	}
 
 	item = modify_argument(arg, MAX_RQ_LEN);
-	if ( strcmp(cmd,"GET") != 0 )
+    if ( strcmp(cmd, "HEAD") == 0 )
+        header( fp, 200, "OK", "text/plain");
+	else if ( strcmp(cmd,"GET") != 0 )
 		cannot_do(fp);
 	else if ( not_exist( item ) )
 		do_404(item, fp );
@@ -390,8 +445,9 @@ char* show_time()
 void
 header( FILE *fp, int code, char *msg, char *content_type )
 {
-	fprintf(fp, "HTTP/1.0 %d %s\r\n", code, msg);
-    fprintf(fp, "Date: %s\r\n", show_time());
+	fprintf(fp, "HTTP/1.0 %d %s ", code, msg);
+    fprintf(fp, "Date: %s ", show_time());
+    fprintf(fp, "Server: %s ", full_hostname());
 	if ( content_type )
 		fprintf(fp, "Content-type: %s\r\n", content_type );
 }
