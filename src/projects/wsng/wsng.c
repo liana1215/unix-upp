@@ -1,3 +1,4 @@
+#include    <dirent.h>
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<strings.h>
@@ -12,6 +13,7 @@
 #include	<signal.h>
 #include    <time.h>
 #include	"socklib.h"
+#include    "wsng_util.h"
 
 /*
  * ws.c - a web server
@@ -44,6 +46,14 @@ char	myhost[MAXHOSTNAMELEN];
 int	myport;
 char	*full_hostname();
 
+typedef struct content_type {
+    char* ext;
+    char* content;
+    struct content_type* next;
+} content_type;
+
+content_type* head = NULL;
+
 #define	oops(m,x)	{ perror(m); exit(x); }
 
 /*
@@ -69,6 +79,9 @@ void	fatal(char *, char *);
 void	handle_call(int);
 int	read_request(FILE *, char *, int);
 char	*readline(char *, int, FILE *);
+void free_table(content_type*);
+
+
 
 int
 main(int ac, char *av[])
@@ -90,6 +103,7 @@ main(int ac, char *av[])
 		else
 			handle_call(fd);		/* handle call	*/
 	}
+    free_table(head);
 	return 0;
 	/* never end */
 }
@@ -221,31 +235,29 @@ int startup(int ac, char *av[],char host[], int *portnump)
 	return sock;
 }
 
-typedef struct content_type {
-    char* ext;
-    char* content;
-    struct content_type* next;
-} content_type;
 
-
-content_type* init_type(char* ext, char* content) {
-    content_type* newtype = malloc(sizeof(content_type));
+content_type* init_type(content_type* head, char* ext, char* content) {
+    content_type *newtype = (content_type*)malloc(sizeof(content_type));
     if (newtype != NULL) {
         newtype->ext = ext;
         newtype->content = content;
         newtype->next = NULL;
     }
+    
     return newtype;
 }
 
-content_type* add_type(content_type* table, char* ext, char* content) {
+
+content_type* push_type(content_type* table, char* ext, char* content) {
+
     content_type* curr;
-    curr = table;
+    curr = head;
     while (curr->next != NULL)
         curr = curr->next;
 
-    curr->next = init_type(ext, content);
-    return curr->next;
+    content_type* newtype = init_type(NULL, ext, content);
+    curr->next = newtype;
+    return head;
 }
 
 void free_table(content_type* head) {
@@ -280,30 +292,33 @@ void process_config_file(char *conf_file, int *portnump)
 	/* open the file */
 	if ( (fp = fopen(conf_file,"r")) == NULL )
 		fatal("Cannot open config file %s", conf_file);
-    
-    content_type* table, *head;
-    table = init_type("DEFAULT", "text/plain");
+
+    content_type* table;
+    table= init_type(head, "DEFAULT", "text/plain");
     head = table;
     
    
 	/* extract the settings */
 	while( read_param(fp, param, PARAM_LEN, val1, VALUE_LEN, val2) != EOF )
 	{
-		if ( strcasecmp(param,"server_root") == 0 ) {
+		if ( strcasecmp(param,"server_root") == 0 )
 			strcpy(rootdir, val1);
-            printf("%s %s\n", rootdir, val1);
-        }
-		if ( strcasecmp(param,"port") == 0 ) {
+
+		if ( strcasecmp(param,"port") == 0 )
 			port = atoi(val1);
-            printf("%s\n", val1);
-        }
-        if ( strcasecmp(param,"type") == 0 ) {
-            add_type(table, val1, val2);
-            printf("%s %s %s\n", param, val1, val2);
-        }
+
+        if ( strcasecmp(param,"type") == 0 )
+            table = push_type(table, val1, val2);
 	}
+    content_type* ptr;
+    ptr = head;
+    while (ptr->next != NULL) {
+        printf("after add: %s %s\n", ptr->ext, ptr->content);
+        ptr=ptr->next;   
+    }
+
+
 	fclose(fp);
-    free_table(head);   
 	/* act on the settings */
 	if (chdir(rootdir) == -1)
 		oops("cannot change to rootdir", 2);
@@ -513,17 +528,37 @@ not_exist(char *f)
 void
 do_ls(char *dir, FILE *fp)
 {
-	int	fd;	/* file descriptor of stream */
+	//int	fd;	/* file descriptor of stream */
 
 	header(fp, 200, "OK", "text/plain");
 	fprintf(fp,"\r\n");
 	fflush(fp);
 
-	fd = fileno(fp);
-	dup2(fd,1);
-	dup2(fd,2);
-	execlp("/bin/ls","ls","-l",dir,NULL);
-	perror(dir);
+    DIR *mydir;
+    struct dirent *file;
+    struct stat info_p;
+    char    modestr[11];
+    char buf[1024];
+
+    mydir = opendir(dir);
+    fprintf(fp, "<html>\n");
+    while((file = readdir(mydir)) != NULL)
+    {
+        sprintf(buf, "%s/%s", dir, file->d_name);
+        stat(buf, &info_p);
+        mode_to_letters(info_p.st_mode, modestr);
+
+        fprintf(fp, "%s"    , modestr);
+        fprintf(fp, "%4d "  , (int) info_p.st_nlink);  
+        fprintf(fp, "%-8s " , uid_to_name(info_p.st_uid));
+        fprintf(fp, "%-8s " , gid_to_name(info_p.st_gid));
+        fprintf(fp, "%5ld " , (long)info_p.st_size);
+        fprintf(fp, "%s "   , fmt_time( info_p.st_mtime, DATE_FMT));
+        //TODO: Need to add hyperlink
+        fprintf(fp, "<a href="">%s</a><br></br>\n",file->d_name);
+    }
+    fprintf(fp, "</html>\n");
+    closedir(mydir);
 }
 
 /* ------------------------------------------------------ *
@@ -573,6 +608,20 @@ do_cat(char *f, FILE *fpsock)
 	FILE	*fpfile;
 	int	c;
 
+    content_type* typeptr;
+    typeptr = head;
+    while (typeptr->next != NULL) {
+        printf("%s %s\n", typeptr->ext, typeptr->content);   
+        if (strcmp(typeptr->ext, extension) == 0)
+            content = typeptr->content;
+
+        typeptr = typeptr->next;
+    }
+
+    printf("%s\n", content);
+    
+    //TODO: Integrate table
+    /*
 	if ( strcmp(extension,"html") == 0 )
 		content = "text/html";
 	else if ( strcmp(extension, "gif") == 0 )
@@ -581,10 +630,9 @@ do_cat(char *f, FILE *fpsock)
 		content = "image/jpeg";
 	else if ( strcmp(extension, "jpeg") == 0 )
 		content = "image/jpeg";
-
+    */
 	fpfile = fopen( f , "r");
-	if ( fpfile != NULL )
-	{
+	if ( fpfile != NULL ) {
 		header( fpsock, 200, "OK", content );
 		fprintf(fpsock, "\r\n");
 		while( (c = getc(fpfile) ) != EOF )
