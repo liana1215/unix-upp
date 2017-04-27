@@ -70,6 +70,8 @@ void	do_cat(char *f, FILE *fpsock);
 void	do_exec( char *prog, FILE *fp);
 void	do_ls(char *dir, FILE *fp);
 int	ends_in_cgi(char *f);
+int ends_in_html(char *f);
+
 char 	*file_type(char *f);
 void	header( FILE *fp, int code, char *msg, char *content_type );
 int	isadir(char *f);
@@ -80,6 +82,7 @@ void	handle_call(int);
 int	read_request(FILE *, char *, int);
 char	*readline(char *, int, FILE *);
 void free_table(content_type*);
+char* check_if_html(char* dir);
 
 
 
@@ -161,10 +164,10 @@ int read_request(FILE *fp, char rq[], int rqlen)
 
 void read_til_crnl(FILE *fp)
 {
-        char    buf[MAX_RQ_LEN];
-        while( readline(buf,MAX_RQ_LEN,fp) != NULL 
-			&& strcmp(buf,"\r\n") != 0 )
-                ;
+    char    buf[MAX_RQ_LEN];
+    while( readline(buf,MAX_RQ_LEN,fp) != NULL 
+        && strcmp(buf,"\r\n") != 0 )
+            ;
 }
 
 /*
@@ -192,6 +195,7 @@ char *readline(char *buf, int len, FILE *fp)
         *cp = '\0';
         return ( c == EOF && cp == buf ? NULL : buf );
 }
+
 /*
  * initialization function
  * 	1. process command line args
@@ -260,6 +264,7 @@ content_type* push_type(content_type* table, char* ext, char* content) {
     return head;
 }
 
+
 void free_table(content_type* head) {
     content_type* curr, *tmp;
     curr = head;
@@ -326,6 +331,7 @@ void process_config_file(char *conf_file, int *portnump)
 	return;
 }
 
+
 /*
  * read_param:
  *   purpose -- read next parameter setting line from fp
@@ -365,7 +371,6 @@ int read_param(FILE *fp, char *name, int nlen, char* val1, int vlen, char* val2)
    do what the request asks for and write reply to fp
    rq is HTTP command:  GET /foo/bar.html HTTP/1.0
    ------------------------------------------------------ */
-
 void process_rq(char *rq, FILE *fp)
 {
 	char	cmd[MAX_RQ_LEN], arg[MAX_RQ_LEN];
@@ -436,6 +441,7 @@ modify_argument(char *arg, int len)
 		strcpy(arg, ".");
 	return arg;
 }
+
 /* ------------------------------------------------------ *
    the reply header thing: all functions need one
    if content_type is NULL then don't send content type
@@ -454,7 +460,6 @@ char* show_time()
 
     return ctime(&tv.tv_sec);
 }
-
 
 
 void
@@ -513,6 +518,7 @@ isadir(char *f)
 	return ( stat(f, &info) != -1 && S_ISDIR(info.st_mode) );
 }
 
+
 int
 not_exist(char *f)
 {
@@ -521,6 +527,28 @@ not_exist(char *f)
 	return( stat(f,&info) == -1 && errno == ENOENT );
 }
 
+
+char* check_if_html(char* dir) 
+{
+    DIR *tmp_dir;
+    struct dirent *file;
+    char buf[1024];
+
+    tmp_dir = opendir(dir);
+    while((file = readdir(tmp_dir)) != NULL) {
+        strcpy(buf, file->d_name);
+        char* ptr;
+        if ((ptr = strrchr(buf, '.')))
+            *(ptr) = '\0';
+        
+        if (ends_in_html(file->d_name) == 1 && strcmp(buf, "index") == 0)
+            return file->d_name;
+    }
+    return "";    
+} 
+       
+
+    
 /*
  * lists the directory named by 'dir' 
  * sends the listing to the stream at fp
@@ -535,34 +563,39 @@ do_ls(char *dir, FILE *fp)
     DIR *tmp_dir;
     struct dirent *file;
     struct stat info_p;
-    char    modestr[11];
+    char  modestr[11];
     char buf[1024];
 
-    tmp_dir = opendir(dir);
-    fprintf(fp, "<html>\n");
-    while((file = readdir(tmp_dir)) != NULL)
-    {
-        sprintf(buf, "%s/%s", dir, file->d_name);
-        stat(buf, &info_p);
-        mode_to_letters(info_p.st_mode, modestr);
+    char* index = check_if_html(dir);
+    if (strcmp(index, "") != 0) {
+        sprintf(buf, "%s/%s", dir, index);
+        do_cat(buf, fp);
+    } else {
+        tmp_dir = opendir(dir);
+        fprintf(fp, "<html>\n");
+        while((file = readdir(tmp_dir)) != NULL)
+        {
+            sprintf(buf, "%s/%s", dir, file->d_name);
+            stat(buf, &info_p);
+            mode_to_letters(info_p.st_mode, modestr);
 
-        fprintf(fp, "%s"    , modestr);
-        fprintf(fp, "%4d "  , (int) info_p.st_nlink);  
-        fprintf(fp, "%-8s " , uid_to_name(info_p.st_uid));
-        fprintf(fp, "%-8s " , gid_to_name(info_p.st_gid));
-        fprintf(fp, "%5ld " , (long)info_p.st_size);
-        fprintf(fp, "%s "   , fmt_time( info_p.st_mtime, DATE_FMT));
-        fprintf(fp, "<a href=\"%s\">%s</a><br></br>\n",file->d_name, file->d_name);
+            fprintf(fp, "%s"    , modestr);
+            fprintf(fp, "%4d "  , (int) info_p.st_nlink);  
+            fprintf(fp, "%-8s " , uid_to_name(info_p.st_uid));
+            fprintf(fp, "%-8s " , gid_to_name(info_p.st_gid));
+            fprintf(fp, "%5ld " , (long)info_p.st_size);
+            fprintf(fp, "%s "   , fmt_time( info_p.st_mtime, DATE_FMT));
+            fprintf(fp, "<a href=\"%s\">%s</a><br></br>\n",file->d_name, file->d_name);
+        }
+        fprintf(fp, "</html>\n");
+        closedir(tmp_dir);
     }
-    fprintf(fp, "</html>\n");
-    closedir(tmp_dir);
 }
 
 /* ------------------------------------------------------ *
    the cgi stuff.  function to check extension and
    one to run the program.
    ------------------------------------------------------ */
-
 char *
 file_type(char *f)
 /* returns 'extension' of file */
@@ -573,10 +606,17 @@ file_type(char *f)
 	return "";
 }
 
+
 int
 ends_in_cgi(char *f)
 {
 	return ( strcmp( file_type(f), "cgi" ) == 0 );
+}
+
+int
+ends_in_html(char *f)
+{
+	return ( strcmp( file_type(f), "html" ) == 0 );
 }
 
 void
@@ -628,6 +668,8 @@ do_cat(char *f, FILE *fpsock)
 	else if ( strcmp(extension, "jpeg") == 0 )
 		content = "image/jpeg";
     */
+    printf("before fopen %s", f);
+
 	fpfile = fopen( f , "r");
 	if ( fpfile != NULL ) {
 		header( fpsock, 200, "OK", content );
