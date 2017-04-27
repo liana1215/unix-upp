@@ -528,21 +528,19 @@ not_exist(char *f)
 void
 do_ls(char *dir, FILE *fp)
 {
-	//int	fd;	/* file descriptor of stream */
-
 	header(fp, 200, "OK", "text/plain");
 	fprintf(fp,"\r\n");
 	fflush(fp);
 
-    DIR *mydir;
+    DIR *tmp_dir;
     struct dirent *file;
     struct stat info_p;
     char    modestr[11];
     char buf[1024];
 
-    mydir = opendir(dir);
+    tmp_dir = opendir(dir);
     fprintf(fp, "<html>\n");
-    while((file = readdir(mydir)) != NULL)
+    while((file = readdir(tmp_dir)) != NULL)
     {
         sprintf(buf, "%s/%s", dir, file->d_name);
         stat(buf, &info_p);
@@ -554,11 +552,10 @@ do_ls(char *dir, FILE *fp)
         fprintf(fp, "%-8s " , gid_to_name(info_p.st_gid));
         fprintf(fp, "%5ld " , (long)info_p.st_size);
         fprintf(fp, "%s "   , fmt_time( info_p.st_mtime, DATE_FMT));
-        //TODO: Need to add hyperlink
-        fprintf(fp, "<a href="">%s</a><br></br>\n",file->d_name);
+        fprintf(fp, "<a href=\"%s\">%s</a><br></br>\n",file->d_name, file->d_name);
     }
     fprintf(fp, "</html>\n");
-    closedir(mydir);
+    closedir(tmp_dir);
 }
 
 /* ------------------------------------------------------ *
