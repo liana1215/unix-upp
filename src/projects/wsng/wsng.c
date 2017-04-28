@@ -82,7 +82,7 @@ void    handle_call(int);
 int     read_request(FILE *, char *, int);
 char*   readline(char *, int, FILE *);
 void    free_table(content_type*);
-char*   check_if_html(char* dir);
+char*   check_if_index(char* dir);
 
 
 
@@ -516,7 +516,7 @@ not_exist(char *f)
 }
 
 
-char* check_if_html(char* dir)
+char* check_if_index(char* dir)
 {
     DIR *tmp_dir;
     struct dirent *file;
@@ -529,12 +529,14 @@ char* check_if_html(char* dir)
         if ((ptr = strrchr(buf, '.')))
             *(ptr) = '\0';
 
-        if (ends_in_html(file->d_name) == 1 && strcmp(buf, "index") == 0)
+        if ((ends_in_html(file->d_name) == 1) && (strcmp(buf, "index") == 0))
+            return file->d_name;
+
+        if ((ends_in_cgi(file->d_name) == 1) && (strcmp(buf, "index") == 0))
             return file->d_name;
     }
     return "";
 }
-
 
 
 /*
@@ -554,10 +556,15 @@ do_ls(char *dir, FILE *fp)
     char  modestr[11];
     char buf[1024];
 
-    char* index = check_if_html(dir);
+    char* index = check_if_index(dir);
+    printf("%s\n", index);
     if (strcmp(index, "") != 0) {
         sprintf(buf, "%s/%s", dir, index);
-        do_cat(buf, fp);
+        if (strcmp(index, "index.html") == 0)
+            do_cat(buf, fp);
+
+        if (strcmp(index, "index.cgi") == 0)
+            do_exec(buf, fp);
     } else {
         tmp_dir = opendir(dir);
         fprintf(fp, "<html>\n");
