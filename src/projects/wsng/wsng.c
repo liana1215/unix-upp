@@ -95,23 +95,19 @@ int main(int ac, char* av[])
 {
     int sock, fd;
 
-    /* set up */
     sock = startup(ac, av, myhost, &myport);
 
-    /* sign on */
     printf("wsng%s started.  host=%s port=%d\n", VERSION, myhost, myport);
 
-    /* main loop here */
     while (1) {
         fd = accept(sock, NULL, NULL); /* take a call  */
         if (fd == -1) {
             perror("accept");
         } else
-            handle_call(fd);        /* handle call  */
+            handle_call(fd);           /* handle call  */
     }
     free_table(head);
     return 0;
-    /* never end */
 }
 
 
@@ -143,10 +139,10 @@ void handle_call(int fd)
         printf("got a call: request = %s", request);
 
         process_rq(request, fpout);
-        fflush(fpout);      /* send data to client  */
-        exit(0);            /* child is done    */
+        fflush(fpout);      /* send data to client   */
+        exit(0);            /* child is done         */
     }
-    /* parent: close fd and return to take next call    */
+    /* parent: close fd and return to take next call */
     waitpid(pid, NULL, WNOHANG);
     close(fd);
 }
@@ -696,10 +692,10 @@ char * full_hostname()
         exit(1);
     }
     hp = gethostbyname(hname);        /* get info about host  */
-    if (hp == NULL)           /*   or die     */
+    if (hp == NULL)                   /*   or die     */
         return NULL;
     strcpy(fullname, hp->h_name);     /* store foo.bar.com    */
-    return fullname;            /* and return it    */
+    return fullname;                  /* and return it    */
 }
 
 
