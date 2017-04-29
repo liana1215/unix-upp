@@ -349,7 +349,7 @@ int read_param(FILE *fp, char *name, int nlen, char* val1, int vlen, char* val2)
     int c;
     char    fmt[100] ;
 
-    sprintf(fmt, "%%%ds%%%ds%%%ds", nlen, vlen, vlen);
+    snprintf(fmt,sizeof(int)*4+1, "%%%ds%%%ds%%%ds", nlen, vlen, vlen);
 
     /* read in next line and if the line is too long, read until \n */
     while(fgets(line, LINELEN, fp) != NULL) {
@@ -574,7 +574,7 @@ void do_ls(char *dir, FILE *fp)
 
     char* index = check_if_index(dir);
     if (strcmp(index, "") != 0) {
-        sprintf(buf, "%s/%s", dir, index);
+        snprintf(buf, sizeof(char*)*3, "%s/%s", dir, index);
         if (strcmp(index, "index.html") == 0)
             do_cat(buf, fp);
 
@@ -584,7 +584,7 @@ void do_ls(char *dir, FILE *fp)
         tmp_dir = opendir(dir);
         fprintf(fp, "<html>\n");
         while ((file = readdir(tmp_dir)) != NULL) {
-            sprintf(buf, "%s/%s", dir, file->d_name);
+            snprintf(buf, sizeof(char*)*3, "%s/%s", dir, file->d_name);
             stat(buf, &info_p);
             mode_to_letters(info_p.st_mode, modestr);
             fprintf(fp, "%s"    , modestr);
