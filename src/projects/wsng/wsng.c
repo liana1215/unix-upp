@@ -13,7 +13,6 @@
 #include    <sys/wait.h>
 #include    <time.h>
 #include    <unistd.h>
-
 #include    "socklib.h"
 #include    "wsng_util.h"
 
@@ -38,14 +37,11 @@
 #define SERVER_ROOT "."
 #define CONFIG_FILE "wsng.conf"
 #define VERSION     "1"
-
 #define MAX_RQ_LEN  4096
 #define LINELEN     1024
 #define PARAM_LEN   128
 #define VALUE_LEN   512
 #define MAXVARS     2
-#define QUERY_STRING 0
-#define REQUEST_METHOD 1
 
 char myhost[MAXHOSTNAMELEN];
 int myport;
@@ -118,6 +114,7 @@ int main(int ac, char* av[])
     /* never end */
 }
 
+
 /*
  * handle_call(fd) - serve the request arriving on fd
  * summary: fork, then get request, then process request
@@ -134,7 +131,6 @@ void handle_call(int fd)
         perror("fork");
         return;
     }
-
     /* child: buffer socket and talk with client */
     if (pid == 0) {
         fpin = fdopen(fd, "r");
@@ -155,6 +151,7 @@ void handle_call(int fd)
     close(fd);
 }
 
+
 /*
  * read the http request into rq not to exceed rqlen
  * return -1 for error, 0 for success
@@ -168,11 +165,14 @@ int read_request(FILE *fp, char rq[], int rqlen)
     return 0;
 }
 
+
 void read_til_crnl(FILE *fp)
 {
     char buf[MAX_RQ_LEN];
+
     while (readline(buf, MAX_RQ_LEN, fp) != NULL && strcmp(buf, "\r\n") != 0) {}
 }
+
 
 /*
  * readline -- read in a line from fp, stop at \n
@@ -186,19 +186,20 @@ void read_til_crnl(FILE *fp)
  */
 char *readline(char *buf, int len, FILE *fp)
 {
-        int space = len - 2;
-        char *cp = buf;
-        int c;
+    int space = len - 2;
+    char *cp = buf;
+    int c;
 
-        while ((c = getc(fp)) != '\n' && c != EOF) {
-                if (space-- > 0)
-                    *cp++ = c;
-        }
-        if (c == '\n')
+    while ((c = getc(fp)) != '\n' && c != EOF) {
+        if (space-- > 0)
             *cp++ = c;
-        *cp = '\0';
-        return (c == EOF && cp == buf ? NULL : buf);
+    }
+    if (c == '\n')
+        *cp++ = c;
+    *cp = '\0';
+    return (c == EOF && cp == buf ? NULL : buf);
 }
+
 
 /*
  * initialization function
@@ -243,6 +244,10 @@ int startup(int ac, char *av[], char host[], int *portnump)
     return sock;
 }
 
+/* ------------------------------------------------------ *
+   Data structure to manage different file types defined in
+   wsng.conf.
+   ------------------------------------------------------ */
 
 content_type* init_type(content_type* head, char* ext, char* content) {
     content_type *newtype = (content_type*)malloc(sizeof(content_type));
@@ -323,7 +328,6 @@ void process_config_file(char *conf_file, int *portnump)
         ptr = ptr->next;
     }
 
-
     fclose(fp);
     /* act on the settings */
     if (chdir(rootdir) == -1)
@@ -350,7 +354,6 @@ int read_param(FILE *fp, char *name, int nlen, char* val1, int vlen, char* val2)
     char fmt[100];
 
     snprintf(fmt, sizeof(int)*4+1, "%%%ds%%%ds%%%ds", nlen, vlen, vlen);
-
     /* read in next line and if the line is too long, read until \n */
     while (fgets(line, LINELEN, fp) != NULL) {
         if (line[strlen(line)-1] != '\n')
@@ -380,9 +383,7 @@ void process_rq(char *rq, FILE *fp)
         return;
     }
 
-
     item = query_string(modify_argument(arg, MAX_RQ_LEN));
-
     if (strcmp(cmd, "HEAD") == 0)
         header(fp, 200, "OK", "text/plain");
     else if (strcmp(cmd, "GET") != 0)
@@ -399,6 +400,7 @@ void process_rq(char *rq, FILE *fp)
         do_cat(item, fp);
 }
 
+
 /*
  * modify_argument
  *  purpose: many roles
@@ -407,7 +409,6 @@ void process_rq(char *rq, FILE *fp)
  *  returns: pointer to modified string
  *     args: array containing arg and length of that array
  */
-
 char* modify_argument(char *arg, int len)
 {
     char    *nexttoken;
@@ -415,7 +416,6 @@ char* modify_argument(char *arg, int len)
 
     if (copy == NULL)
         oops("memory error", 1);
-
     /* remove all ".." components from path */
     /* by tokeninzing on "/" and rebuilding */
     /* the string without the ".." items    */
@@ -514,6 +514,7 @@ void do_500(char *item, FILE *fp)
 int isadir(char *f)
 {
     struct stat info;
+
     return (stat(f, &info) != -1 && S_ISDIR(info.st_mode));
 }
 
@@ -521,6 +522,7 @@ int isadir(char *f)
 int not_exist(char *f)
 {
     struct stat info;
+
     return(stat(f, &info) == -1 && errno == ENOENT);
 }
 
@@ -569,8 +571,8 @@ void do_ls(char *dir, FILE *fp)
     struct stat info_p;
     char  modestr[11];
     char buf[1024];
-
     char* index = check_if_index(dir);
+
     if (strcmp(index, "") != 0) {
         snprintf(buf, sizeof(char*)*3, "%s/%s", dir, index);
         if (strcmp(index, "index.html") == 0)
