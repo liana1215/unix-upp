@@ -5,14 +5,15 @@
 #include    <string.h>
 #include    <netdb.h>
 #include    <errno.h>
-#include    <unistd.h>
+#include    <signal.h>
+#include    <sys/param.h>
+#include    <sys/stat.h>
 #include    <sys/time.h>
 #include    <sys/types.h>
-#include    <sys/stat.h>
-#include    <sys/param.h>
-#include    <signal.h>
+#include    <sys/wait.h>
 #include    <time.h>
 #include    <unistd.h>
+
 #include    "socklib.h"
 #include    "wsng_util.h"
 
@@ -59,42 +60,42 @@ typedef struct content_type {
 
 content_type* head = NULL;
 
-#define oops(m,x)   { perror(m); exit(x); }
+#define oops(m,x) {perror(m); exit(x);}
 
 /*
  * prototypes
  */
 
-int     startup(int, char *a[], char [], int *);
+int     startup(int, char* a[], char[], int*);
 void    read_til_crnl(FILE *);
-void    process_rq( char *, FILE *);
-void    bad_request(FILE *);
-void    cannot_do(FILE *fp);
-void    do_404(char *item, FILE *fp);
-void    do_500(char *item, FILE *fp);
-void    do_cat(char *f, FILE *fpsock);
-void    do_exec( char *prog, FILE *fp);
-void    do_ls(char *dir, FILE *fp);
-int     ends_in_cgi(char *f);
-int     ends_in_html(char *f);
+void    process_rq(char*, FILE*);
+void    bad_request(FILE*);
+void    cannot_do(FILE* fp);
+void    do_404(char* item, FILE* fp);
+void    do_500(char* item, FILE* fp);
+void    do_cat(char* f, FILE* fpsock);
+void    do_exec(char* prog, FILE* fp);
+void    do_ls(char* dir, FILE* fp);
+int     ends_in_cgi(char* f);
+int     ends_in_html(char* f);
 
-char*   file_type(char *f);
-void    header( FILE *fp, int code, char *msg, char *content_type );
-int     isadir(char *f);
-char*   modify_argument(char *arg, int len);
-int     not_exist(char *f);
-int     no_access(char *f);
-void    fatal(char *, char *);
+char*   file_type(char* f);
+void    header(FILE* fp, int code, char* msg, char* content_type);
+int     isadir(char* f);
+char*   modify_argument(char* arg, int len);
+int     not_exist(char* f);
+int     no_access(char* f);
+void    fatal(char*, char*);
 void    handle_call(int);
-int     read_request(FILE *, char *, int);
-char*   readline(char *, int, FILE *);
+int     read_request(FILE*, char*, int);
+char*   readline(char*, int, FILE*);
 void    free_table(content_type*);
 char*   check_if_index(char* dir);
-char*   query_string(char *f);
+char*   query_string(char* f);
 
 
 
-int main(int ac, char *av[])
+int main(int ac, char* av[])
 {
     int sock, fd;
 
@@ -105,11 +106,10 @@ int main(int ac, char *av[])
     printf("wsng%s started.  host=%s port=%d\n", VERSION, myhost, myport);
 
     /* main loop here */
-    while(1) {
+    while (1) {
         fd = accept(sock, NULL, NULL); /* take a call  */
         if (fd == -1) {
             perror("accept");
-        
         } else
             handle_call(fd);        /* handle call  */
     }
@@ -151,6 +151,7 @@ void handle_call(int fd)
         exit(0);            /* child is done    */
     }
     /* parent: close fd and return to take next call    */
+    waitpid(pid, NULL, WNOHANG);
     close(fd);
 }
 
@@ -170,8 +171,7 @@ int read_request(FILE *fp, char rq[], int rqlen)
 void read_til_crnl(FILE *fp)
 {
     char buf[MAX_RQ_LEN];
-    while (readline(buf,MAX_RQ_LEN,fp) != NULL && strcmp(buf, "\r\n") != 0)
-            ;
+    while (readline(buf, MAX_RQ_LEN, fp) != NULL && strcmp(buf, "\r\n") != 0) {}
 }
 
 /*
@@ -217,7 +217,7 @@ char *readline(char *buf, int len, FILE *fp)
  *       the host by writing it into host[]
  *       the port by writing it into *portnump
  */
-int startup(int ac, char *av[],char host[], int *portnump)
+int startup(int ac, char *av[], char host[], int *portnump)
 {
     int sock;
     int portnum = PORTNUM;
@@ -230,14 +230,14 @@ int startup(int ac, char *av[],char host[], int *portnump)
             if (++pos < ac)
                 configfile = av[pos];
             else
-                fatal("missing arg for -c",NULL);
+                fatal("missing arg for -c", NULL);
         }
     }
     process_config_file(configfile, &portnum);
 
     sock = make_server_socket(portnum);
     if (sock == -1)
-        oops("making socket",2);
+        oops("making socket", 2);
     strcpy(myhost, full_hostname());
     *portnump = portnum;
     return sock;
@@ -298,29 +298,29 @@ void process_config_file(char *conf_file, int *portnump)
     int read_param(FILE *, char *, int, char *, int, char*);
 
     /* open the file */
-    if ((fp = fopen(conf_file,"r")) == NULL)
+    if ((fp = fopen(conf_file, "r")) == NULL)
         fatal("Cannot open config file %s", conf_file);
 
     content_type* table;
-    table= init_type(head, "DEFAULT", "text/plain");
+    table = init_type(head, "DEFAULT", "text/plain");
     head = table;
 
     /* extract the settings */
     while (read_param(fp, param, PARAM_LEN, val1, VALUE_LEN, val2) != EOF) {
-        if (strcasecmp(param,"server_root") == 0)
+        if (strcasecmp(param, "server_root") == 0)
             strcpy(rootdir, val1);
 
-        if (strcasecmp(param,"port") == 0)
+        if (strcasecmp(param, "port") == 0)
             port = atoi(val1);
 
-        if (strcasecmp(param,"type") == 0)
+        if (strcasecmp(param, "type") == 0)
             table = push_type(table, val1, val2);
     }
     content_type* ptr;
     ptr = head;
     while (ptr->next != NULL) {
         printf("after add: %s %s\n", ptr->ext, ptr->content);
-        ptr=ptr->next;
+        ptr = ptr->next;
     }
 
 
@@ -345,17 +345,16 @@ void process_config_file(char *conf_file, int *portnump)
  */
 int read_param(FILE *fp, char *name, int nlen, char* val1, int vlen, char* val2)
 {
-    char    line[LINELEN];
+    char line[LINELEN];
     int c;
-    char    fmt[100] ;
+    char fmt[100];
 
-    snprintf(fmt,sizeof(int)*4+1, "%%%ds%%%ds%%%ds", nlen, vlen, vlen);
+    snprintf(fmt, sizeof(int)*4+1, "%%%ds%%%ds%%%ds", nlen, vlen, vlen);
 
     /* read in next line and if the line is too long, read until \n */
-    while(fgets(line, LINELEN, fp) != NULL) {
+    while (fgets(line, LINELEN, fp) != NULL) {
         if (line[strlen(line)-1] != '\n')
-            while((c = getc(fp)) != '\n' && c != EOF)
-                ;
+            while ((c = getc(fp)) != '\n' && c != EOF) {}
 
         int nval = sscanf(line, fmt, name, val1, val2);
         if ((nval == 2 || nval == 3) && *name != '#')
@@ -386,13 +385,12 @@ void process_rq(char *rq, FILE *fp)
 
     if (strcmp(cmd, "HEAD") == 0)
         header(fp, 200, "OK", "text/plain");
-    else if (strcmp(cmd,"GET") != 0)
+    else if (strcmp(cmd, "GET") != 0)
         cannot_do(fp);
     else if (not_exist(item))
         do_404(item, fp);
-    else if (no_access(item) == -1) {
+    else if (no_access(item) == -1)
         do_500(item, fp);
-    }
     else if (isadir(item))
         do_ls(item, fp);
     else if (ends_in_cgi(item))
@@ -426,7 +424,7 @@ char* modify_argument(char *arg, int len)
 
     nexttoken = strtok(arg, "/");
     while (nexttoken != NULL) {
-        if (strcmp(nexttoken,"..") != 0) {
+        if (strcmp(nexttoken, "..") != 0) {
             if (*copy)
                 strcat(copy, "/");
             strcat(copy, nexttoken);
@@ -439,7 +437,7 @@ char* modify_argument(char *arg, int len)
     /* the array is now cleaned up */
     /* handle a special case       */
 
-    if (strcmp(arg,"") == 0)
+    if (strcmp(arg, "") == 0)
         strcpy(arg, ".");
     return arg;
 }
@@ -523,7 +521,7 @@ int isadir(char *f)
 int not_exist(char *f)
 {
     struct stat info;
-    return(stat(f,&info) == -1 && errno == ENOENT);
+    return(stat(f, &info) == -1 && errno == ENOENT);
 }
 
 
@@ -540,7 +538,7 @@ char* check_if_index(char* dir)
     char buf[1024];
 
     tmp_dir = opendir(dir);
-    while((file = readdir(tmp_dir)) != NULL) {
+    while ((file = readdir(tmp_dir)) != NULL) {
         strcpy(buf, file->d_name);
         char* ptr;
         if ((ptr = strrchr(buf, '.')))
@@ -563,7 +561,7 @@ char* check_if_index(char* dir)
 void do_ls(char *dir, FILE *fp)
 {
     header(fp, 200, "OK", "text/plain");
-    fprintf(fp,"\r\n");
+    fprintf(fp, "\r\n");
     fflush(fp);
 
     DIR *tmp_dir;
@@ -591,9 +589,10 @@ void do_ls(char *dir, FILE *fp)
             fprintf(fp, "%4d "  , (int) info_p.st_nlink);
             fprintf(fp, "%-8s " , uid_to_name(info_p.st_uid));
             fprintf(fp, "%-8s " , gid_to_name(info_p.st_gid));
-            fprintf(fp, "%5ld " , (long)info_p.st_size);
+            fprintf(fp, "%5ld " , (int64_t)info_p.st_size);
             fprintf(fp, "%s "   , fmt_time(info_p.st_mtime, DATE_FMT));
-            fprintf(fp, "<a href=\"%s\">%s</a><br></br>\n", file->d_name, file->d_name);
+            fprintf(fp, "<a href=\"%s\">%s</a><br></br>\n",
+                    file->d_name, file->d_name);
         }
         fprintf(fp, "</html>\n");
         closedir(tmp_dir);
@@ -635,7 +634,7 @@ int ends_in_html(char *f)
     return (strcmp(file_type(f), "html") == 0);
 }
 
-void do_exec( char *prog, FILE *fp)
+void do_exec(char *prog, FILE *fp)
 {
     int fd = fileno(fp);
 
@@ -668,24 +667,12 @@ void do_cat(char *f, FILE *fpsock)
 
         typeptr = typeptr->next;
     }
-    printf("%s\n", content);
 
-    //TODO: Integrate table
-    /*
-    if ( strcmp(extension,"html") == 0 )
-        content = "text/html";
-    else if ( strcmp(extension, "gif") == 0 )
-        content = "image/gif";
-    else if ( strcmp(extension, "jpg") == 0 )
-        content = "image/jpeg";
-    else if ( strcmp(extension, "jpeg") == 0 )
-        content = "image/jpeg";
-    */
     fpfile = fopen(f, "r");
     if (fpfile != NULL) {
         header(fpsock, 200, "OK", content);
         fprintf(fpsock, "\r\n");
-        while((c = getc(fpfile)) != EOF)
+        while ((c = getc(fpfile)) != EOF)
             putc(c, fpsock);
         fclose(fpfile);
     }
@@ -702,7 +689,7 @@ char * full_hostname()
     char hname[MAXHOSTNAMELEN];
     static char fullname[MAXHOSTNAMELEN];
 
-    if (gethostname(hname,MAXHOSTNAMELEN) == -1) {
+    if (gethostname(hname, MAXHOSTNAMELEN) == -1) {
         perror("gethostname");
         exit(1);
     }
