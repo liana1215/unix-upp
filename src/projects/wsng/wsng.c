@@ -12,6 +12,7 @@
 #include    <sys/param.h>
 #include    <signal.h>
 #include    <time.h>
+#include    <unistd.h>
 #include    "socklib.h"
 #include    "wsng_util.h"
 
@@ -66,6 +67,7 @@ void    process_rq( char *, FILE *);
 void    bad_request(FILE *);
 void    cannot_do(FILE *fp);
 void    do_404(char *item, FILE *fp);
+void    do_500(char *item, FILE *fp);
 void    do_cat(char *f, FILE *fpsock);
 void    do_exec( char *prog, FILE *fp);
 void    do_ls(char *dir, FILE *fp);
@@ -77,6 +79,7 @@ void    header( FILE *fp, int code, char *msg, char *content_type );
 int     isadir(char *f);
 char*   modify_argument(char *arg, int len);
 int     not_exist(char *f);
+int     no_access(char *f);
 void    fatal(char *, char *);
 void    handle_call(int);
 int     read_request(FILE *, char *, int);
@@ -100,9 +103,10 @@ main(int ac, char *av[])
     /* main loop here */
     while(1) {
         fd = accept(sock, NULL, NULL); /* take a call  */
-        if (fd == -1)
+        if (fd == -1) {
             perror("accept");
-        else
+        
+        } else
             handle_call(fd);        /* handle call  */
     }
     free_table(head);
@@ -140,8 +144,7 @@ void handle_call(int fd)
 
         process_rq(request, fpout);
         fflush(fpout);      /* send data to client  */
-        exit(0);        /* child is done    */
-                    /* exit closes files    */
+        exit(0);            /* child is done    */
     }
     /* parent: close fd and return to take next call    */
     close(fd);
@@ -374,13 +377,18 @@ void process_rq(char *rq, FILE *fp)
         return;
     }
 
+   
+
     item = modify_argument(arg, MAX_RQ_LEN);
     if (strcmp(cmd, "HEAD") == 0)
-        header( fp, 200, "OK", "text/plain");
+        header(fp, 200, "OK", "text/plain");
     else if (strcmp(cmd,"GET") != 0)
         cannot_do(fp);
-    else if (not_exist( item ))
-        do_404(item, fp );
+    else if (not_exist(item))
+        do_404(item, fp);
+    else if (no_access(item) == -1) {
+        do_500(item, fp);
+    }
     else if (isadir(item))
         do_ls(item, fp);
     else if (ends_in_cgi(item))
@@ -398,8 +406,7 @@ void process_rq(char *rq, FILE *fp)
  *     args: array containing arg and length of that array
  */
 
-char *
-modify_argument(char *arg, int len)
+char* modify_argument(char *arg, int len)
 {
     char    *nexttoken;
     char    *copy = malloc(len);
@@ -453,8 +460,7 @@ char* show_time()
 }
 
 
-void
-header(FILE *fp, int code, char *msg, char *content_type)
+void header(FILE *fp, int code, char *msg, char *content_type)
 {
     fprintf(fp, "HTTP/1.0 %d %s ", code, msg);
     fprintf(fp, "Date: %s ", show_time());
@@ -470,28 +476,32 @@ header(FILE *fp, int code, char *msg, char *content_type)
     and do_404(item,fp)     no such object
    ------------------------------------------------------ */
 
-void
-bad_request(FILE *fp)
+void bad_request(FILE *fp)
 {
     header(fp, 400, "Bad Request", "text/plain");
     fprintf(fp, "\r\nI cannot understand your request\r\n");
 }
 
-void
-cannot_do(FILE *fp)
+void cannot_do(FILE *fp)
 {
     header(fp, 501, "Not Implemented", "text/plain");
     fprintf(fp, "\r\n");
     fprintf(fp, "That command is not yet implemented\r\n");
 }
 
-void
-do_404(char *item, FILE *fp)
+void do_404(char *item, FILE *fp)
 {
     header(fp, 404, "Not Found", "text/plain");
     fprintf(fp, "\r\n");
     fprintf(fp, "The item you requested: %s\r\nis not found\r\n", item);
 }
+void do_500(char *item, FILE *fp)
+{
+    header(fp, 500, "Internal Server Error", "text/plain");
+    fprintf(fp, "\r\n");
+    fprintf(fp, "%s\r\n: no permission\r\n", item);
+}
+
 
 /* ------------------------------------------------------ *
    the directory listing section
@@ -499,20 +509,22 @@ do_404(char *item, FILE *fp)
    do_ls runs ls. It should not
    ------------------------------------------------------ */
 
-int
-isadir(char *f)
+int isadir(char *f)
 {
     struct stat info;
     return (stat(f, &info) != -1 && S_ISDIR(info.st_mode));
 }
 
 
-int
-not_exist(char *f)
+int not_exist(char *f)
 {
     struct stat info;
-
     return(stat(f,&info) == -1 && errno == ENOENT);
+}
+
+int no_access(char *f)
+{
+    return access(f, R_OK|W_OK|X_OK);
 }
 
 
@@ -543,8 +555,7 @@ char* check_if_index(char* dir)
  * lists the directory named by 'dir'
  * sends the listing to the stream at fp
  */
-void
-do_ls(char *dir, FILE *fp)
+void do_ls(char *dir, FILE *fp)
 {
     header(fp, 200, "OK", "text/plain");
     fprintf(fp,"\r\n");
@@ -568,12 +579,10 @@ do_ls(char *dir, FILE *fp)
     } else {
         tmp_dir = opendir(dir);
         fprintf(fp, "<html>\n");
-        while ((file = readdir(tmp_dir)) != NULL)
-        {
+        while ((file = readdir(tmp_dir)) != NULL) {
             sprintf(buf, "%s/%s", dir, file->d_name);
             stat(buf, &info_p);
             mode_to_letters(info_p.st_mode, modestr);
-
             fprintf(fp, "%s"    , modestr);
             fprintf(fp, "%4d "  , (int) info_p.st_nlink);
             fprintf(fp, "%-8s " , uid_to_name(info_p.st_uid));
@@ -591,8 +600,7 @@ do_ls(char *dir, FILE *fp)
    the cgi stuff.  function to check extension and
    one to run the program.
    ------------------------------------------------------ */
-char *
-file_type(char *f)
+char * file_type(char *f)
 /* returns 'extension' of file */
 {
     char    *cp;
@@ -602,20 +610,17 @@ file_type(char *f)
 }
 
 
-int
-ends_in_cgi(char *f)
+int ends_in_cgi(char *f)
 {
     return (strcmp(file_type(f), "cgi") == 0);
 }
 
-int
-ends_in_html(char *f)
+int ends_in_html(char *f)
 {
     return (strcmp(file_type(f), "html") == 0);
 }
 
-void
-do_exec( char *prog, FILE *fp)
+void do_exec( char *prog, FILE *fp)
 {
     int fd = fileno(fp);
 
@@ -632,8 +637,7 @@ do_exec( char *prog, FILE *fp)
    sends back contents after a header
    ------------------------------------------------------ */
 
-void
-do_cat(char *f, FILE *fpsock)
+void do_cat(char *f, FILE *fpsock)
 {
     char *extension = file_type(f);
     char *content = "text/plain";
@@ -649,7 +653,6 @@ do_cat(char *f, FILE *fpsock)
 
         typeptr = typeptr->next;
     }
-
     printf("%s\n", content);
 
     //TODO: Integrate table
@@ -663,20 +666,17 @@ do_cat(char *f, FILE *fpsock)
     else if ( strcmp(extension, "jpeg") == 0 )
         content = "image/jpeg";
     */
-    printf("before fopen %s", f);
-
     fpfile = fopen(f, "r");
     if (fpfile != NULL) {
         header(fpsock, 200, "OK", content);
         fprintf(fpsock, "\r\n");
-        while((c = getc(fpfile)) != EOF )
+        while((c = getc(fpfile)) != EOF)
             putc(c, fpsock);
         fclose(fpfile);
     }
 }
 
-char *
-full_hostname()
+char * full_hostname()
 /*
  * returns full `official' hostname for current machine
  * NOTE: this returns a ptr to a static buffer that is
