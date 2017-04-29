@@ -42,10 +42,14 @@
 #define LINELEN     1024
 #define PARAM_LEN   128
 #define VALUE_LEN   512
+#define MAXVARS     2
+#define QUERY_STRING 0
+#define REQUEST_METHOD 1
 
-char    myhost[MAXHOSTNAMELEN];
+char myhost[MAXHOSTNAMELEN];
 int myport;
-char    *full_hostname();
+char* full_hostname();
+
 
 typedef struct content_type {
     char* ext;
@@ -86,11 +90,11 @@ int     read_request(FILE *, char *, int);
 char*   readline(char *, int, FILE *);
 void    free_table(content_type*);
 char*   check_if_index(char* dir);
+char*   query_string(char *f);
 
 
 
-int
-main(int ac, char *av[])
+int main(int ac, char *av[])
 {
     int sock, fd;
 
@@ -186,7 +190,7 @@ char *readline(char *buf, int len, FILE *fp)
         char *cp = buf;
         int c;
 
-        while (( c = getc(fp)) != '\n' && c != EOF ) {
+        while ((c = getc(fp)) != '\n' && c != EOF) {
                 if (space-- > 0)
                     *cp++ = c;
         }
@@ -222,7 +226,7 @@ int startup(int ac, char *av[],char host[], int *portnump)
     void process_config_file(char *, int *);
 
     for (pos = 1; pos < ac; pos++) {
-        if (strcmp(av[pos], "-c") == 0 ) {
+        if (strcmp(av[pos], "-c") == 0) {
             if (++pos < ac)
                 configfile = av[pos];
             else
@@ -377,9 +381,9 @@ void process_rq(char *rq, FILE *fp)
         return;
     }
 
-   
 
-    item = modify_argument(arg, MAX_RQ_LEN);
+    item = query_string(modify_argument(arg, MAX_RQ_LEN));
+
     if (strcmp(cmd, "HEAD") == 0)
         header(fp, 200, "OK", "text/plain");
     else if (strcmp(cmd,"GET") != 0)
@@ -421,9 +425,9 @@ char* modify_argument(char *arg, int len)
     *copy = '\0';
 
     nexttoken = strtok(arg, "/");
-    while( nexttoken != NULL ) {
-        if ( strcmp(nexttoken,"..") != 0 ) {
-            if ( *copy )
+    while (nexttoken != NULL) {
+        if (strcmp(nexttoken,"..") != 0) {
+            if (*copy)
                 strcat(copy, "/");
             strcat(copy, nexttoken);
         }
@@ -522,9 +526,10 @@ int not_exist(char *f)
     return(stat(f,&info) == -1 && errno == ENOENT);
 }
 
+
 int no_access(char *f)
 {
-    return access(f, R_OK|W_OK|X_OK);
+    return access(f, R_OK);
 }
 
 
@@ -568,7 +573,6 @@ void do_ls(char *dir, FILE *fp)
     char buf[1024];
 
     char* index = check_if_index(dir);
-    printf("%s\n", index);
     if (strcmp(index, "") != 0) {
         sprintf(buf, "%s/%s", dir, index);
         if (strcmp(index, "index.html") == 0)
@@ -600,15 +604,26 @@ void do_ls(char *dir, FILE *fp)
    the cgi stuff.  function to check extension and
    one to run the program.
    ------------------------------------------------------ */
-char * file_type(char *f)
+char* file_type(char *f)
 /* returns 'extension' of file */
 {
-    char    *cp;
+    char *cp;
     if ((cp = strrchr(f, '.' )) != NULL)
         return cp+1;
     return "";
 }
 
+char* query_string(char *f)
+{
+    char* ptr;
+
+    if ((ptr = strrchr(f, '?')) != NULL) {
+        *(ptr) = '\0';
+        setenv("QUERY_STRING", ptr+1, 1);
+        setenv("REQUEST_METHOD", "GET", 1);
+    }
+    return f;
+}
 
 int ends_in_cgi(char *f)
 {
