@@ -101,9 +101,9 @@ int main(int ac, char* av[])
 
     while (1) {
         fd = accept(sock, NULL, NULL); /* take a call  */
-        if (fd == -1) {
+        if (fd == -1)
             perror("accept");
-        } else
+        else
             handle_call(fd);           /* handle call  */
     }
     free_table(head);
@@ -320,7 +320,6 @@ void process_config_file(char *conf_file, int *portnump)
     content_type* ptr;
     ptr = head;
     while (ptr->next != NULL) {
-        printf("after add: %s %s\n", ptr->ext, ptr->content);
         ptr = ptr->next;
     }
 
@@ -590,7 +589,7 @@ void do_ls(char *dir, FILE *fp)
             fprintf(fp, "%5ld " , (int64_t)info_p.st_size);
             fprintf(fp, "%s "   , fmt_time(info_p.st_mtime, DATE_FMT));
             fprintf(fp, "<a href=\"%s\">%s</a><br></br>\n",
-                    file->d_name, file->d_name);
+                    buf, file->d_name);
         }
         fprintf(fp, "</html>\n");
         closedir(tmp_dir);
